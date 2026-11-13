@@ -12,3 +12,4 @@
 
 *.bat text eol=crlf
 *.cmd text eol=crlf
+backend/mvnw text eol=lf
