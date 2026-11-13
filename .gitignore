@@ -1,0 +1,33 @@
+﻿# Java / Maven
+target/
+*.class
+*.log
+.settings/
+.classpath
+.project
+
+# React / Node
+node_modules/
+dist/
+coverage/
+
+# Configuración local y secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+application-local.properties
+application-local.yml
+application-local.yaml
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
