@@ -200,6 +200,45 @@ function Get-SafeAction {
     }
 }
 
+function New-EncodedQuery {
+    param([Parameter(Mandatory)][System.Collections.IDictionary]$Parameters)
+
+    $queryParts = foreach ($name in $Parameters.Keys) {
+        $encodedName = [System.Uri]::EscapeDataString([string]$name)
+        $encodedValue = [System.Uri]::EscapeDataString([string]$Parameters[$name])
+        "$encodedName=$encodedValue"
+    }
+    return $queryParts -join '&'
+}
+
+function New-AntRequestParameters {
+    param(
+        [Parameter(Mandatory)][string]$Cedula,
+        [AllowEmptyString()][string]$Plate = '',
+        [switch]$IncludePlate
+    )
+
+    $parameters = [ordered]@{
+        ps_tipo_identificacion = 'CED'
+        ps_identificacion = $Cedula
+    }
+    if ($IncludePlate) {
+        $parameters.ps_placa = $Plate
+    }
+    return $parameters
+}
+
+function Get-OptionalAntRequestParameters {
+    param(
+        [Parameter(Mandatory)][string]$Cedula,
+        [AllowNull()][AllowEmptyString()][string]$Plate = '',
+        [Parameter(Mandatory)][bool]$Authorized
+    )
+
+    if (-not $Authorized) { return $null }
+    return New-AntRequestParameters -Cedula $Cedula -Plate $Plate -IncludePlate
+}
+
 function Get-BodySample {
     param(
         [Parameter(Mandatory)][System.Net.Http.HttpResponseMessage]$Response,
@@ -484,12 +523,7 @@ function Invoke-EndpointGet {
     $cacheControl = ''
 
     try {
-        $queryParts = foreach ($name in $Parameters.Keys) {
-            $encodedName = [System.Uri]::EscapeDataString([string]$name)
-            $encodedValue = [System.Uri]::EscapeDataString([string]$Parameters[$name])
-            "$encodedName=$encodedValue"
-        }
-        $query = $queryParts -join '&'
+        $query = New-EncodedQuery -Parameters $Parameters
         $requestUri = [System.Uri]::new("${BaseUrl}?${query}")
         $currentUri = $requestUri
         for ($hop = 0; $hop -le 5; $hop++) {
@@ -633,23 +667,23 @@ function Show-DiagnosticResult {
 
 function Invoke-AntRequestWithSingleRetry {
     param(
-        [Parameter(Mandatory)][string]$Cedula,
-        [AllowEmptyString()][string]$Plate = '',
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Parameters,
         [Parameter(Mandatory)][int]$TimeoutSeconds,
         [Parameter(Mandatory)][int]$MaxBodyCharacters
     )
 
-    $value = "ps_tipo_identificacion=CED; ps_identificacion=presente; ps_placa=$(if ($Plate) { 'presente' } else { 'vacío' })"
+    $platePresent = $Parameters.Contains('ps_placa') -and -not [string]::IsNullOrEmpty([string]$Parameters['ps_placa'])
+    $value = "ps_tipo_identificacion=CED; ps_identificacion=presente; ps_placa=$(if ($platePresent) { 'presente' } elseif ($Parameters.Contains('ps_placa')) { 'vacío' } else { 'omitido' })"
     Write-Host "`nANT — GET; $value (valores omitidos)"
     $baseUrl = 'https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_grid_citaciones.jsp'
     $baseRequest = $null
     try {
-        $baseRequest = Invoke-AntGet -BaseUrl $baseUrl -Cedula $Cedula -Plate $Plate -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
+        $baseRequest = Invoke-AntGet -BaseUrl $baseUrl -Parameters $Parameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
         Show-DiagnosticResult -Result $baseRequest
         if ($baseRequest.StatusCode -in @(502, 503, 504)) {
             Write-Host 'Gateway no disponible; se esperarán 10 segundos antes del único reintento permitido.'
             Start-Sleep -Seconds 10
-            $retryRequest = Invoke-AntGet -BaseUrl $baseUrl -Cedula $Cedula -Plate $Plate -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
+            $retryRequest = Invoke-AntGet -BaseUrl $baseUrl -Parameters $Parameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
             Show-DiagnosticResult -Result $retryRequest
             return $retryRequest
         }
@@ -657,29 +691,27 @@ function Invoke-AntRequestWithSingleRetry {
     }
     finally {
         $baseRequest = $null
-        $Cedula = $null
-        $Plate = $null
+        $Parameters = $null
         $value = $null
+        $platePresent = $null
     }
 }
 
 function Invoke-AntGet {
     param(
         [Parameter(Mandatory)][string]$BaseUrl,
-        [Parameter(Mandatory)][string]$Cedula,
-        [AllowEmptyString()][string]$Plate = '',
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Parameters,
         [Parameter(Mandatory)][int]$TimeoutSeconds,
         [Parameter(Mandatory)][int]$MaxBodyCharacters
     )
 
     $result = $null
     try {
-        $result = Invoke-EndpointGet -Service 'ANT — consulta web' -BaseUrl $BaseUrl -Parameters ([ordered]@{ ps_tipo_identificacion = 'CED'; ps_identificacion = $Cedula; ps_placa = $Plate }) -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
+        $result = Invoke-EndpointGet -Service 'ANT — consulta web' -BaseUrl $BaseUrl -Parameters $Parameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
         return $result
     }
     finally {
-        $Cedula = $null
-        $Plate = $null
+        $Parameters = $null
         $result = $null
     }
 }
@@ -691,6 +723,8 @@ function Invoke-PrivateDiagnostics {
     $usePlateForAnt = $false
     $existenceResult = $null
     $antBlankResult = $null
+    $antBlankParameters = $null
+    $antPlateParameters = $null
     try {
         Write-Host 'Los valores se pedirán solo en esta consola mediante SecureString. No se imprimirán ni se guardarán en archivos.'
         Write-Host 'Solo se enviarán al servicio correspondiente si el formato estructural es correcto.'
@@ -742,17 +776,17 @@ function Invoke-PrivateDiagnostics {
             return
         }
 
-        $antBlankResult = Invoke-AntRequestWithSingleRetry -Cedula $cedula -Plate '' -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
-        if ($usePlateForAnt) {
-            if ($null -eq $antBlankResult.StatusCode -or $antBlankResult.StatusCode -in @(502, 503, 504)) {
-                Write-Host 'Se omite la consulta ANT opcional con placa porque el endpoint sigue sin responder o devolvió 502/503/504.'
-                $plate = $null
-            }
-            else {
-                $antPlateResult = Invoke-AntRequestWithSingleRetry -Cedula $cedula -Plate $plate -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
-                $antPlateResult = $null
-                $plate = $null
-            }
+        $antBlankParameters = New-AntRequestParameters -Cedula $cedula -Plate '' -IncludePlate
+        $antBlankResult = Invoke-AntRequestWithSingleRetry -Parameters $antBlankParameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
+        $antBlankParameters = $null
+
+        $antPlateParameters = Get-OptionalAntRequestParameters -Cedula $cedula -Plate $plate -Authorized $usePlateForAnt
+        if ($null -ne $antPlateParameters) {
+            Write-Host 'Se ejecutará la consulta ANT opcional con la placa autorizada; su reintento se decide según su propia respuesta.'
+            $antPlateResult = Invoke-AntRequestWithSingleRetry -Parameters $antPlateParameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
+            $antPlateResult = $null
+            $antPlateParameters = $null
+            $plate = $null
         }
         elseif ($null -ne $plate) {
             Write-Host 'No se autorizó el envío de la placa a ANT; solo se probó ps_placa vacío.'
@@ -765,6 +799,8 @@ function Invoke-PrivateDiagnostics {
         $cedula = $null
         $existenceResult = $null
         $antBlankResult = $null
+        $antBlankParameters = $null
+        $antPlateParameters = $null
     }
 }
 
