@@ -2,6 +2,24 @@ spring:
   application:
     name: consultas-sri-ant-backend
 
+integrations:
+  sri:
+    http:
+      connect-timeout: 3s
+      read-timeout: 5s
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      antPoints:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 5
+        minimum-number-of-calls: 3
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 2
+        automatic-transition-from-open-to-half-open-enabled: true
+
 management:
   endpoints:
     web:
