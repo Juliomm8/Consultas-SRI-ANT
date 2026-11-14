@@ -52,8 +52,15 @@ public class SriVehiculoHttpAdapter implements VehiculoConsultaPort {
                 .toUri();
 
         JsonNode response = SriResponseSupport.getJson(restClient, requestUri);
-        JsonNode data = response.isObject() ? response.get("data") : null;
-        if (data == null || !data.isArray()) {
+        if (!response.isObject()) {
+            throw SriIntegrationException.invalidResponse();
+        }
+
+        JsonNode data = response.get("data");
+        if (data == null) {
+            return List.of(mapVehicle(response));
+        }
+        if (!data.isArray()) {
             throw SriIntegrationException.invalidResponse();
         }
 
@@ -75,7 +82,8 @@ public class SriVehiculoHttpAdapter implements VehiculoConsultaPort {
                 attributes.put(name, mapScalar(value));
             }
         });
-        if (attributes.isEmpty()) {
+        ValorCampoVehiculo vehicleCode = attributes.get("codigoVehiculo");
+        if (vehicleCode == null || vehicleCode.tipoDato() == ValorCampoVehiculo.TipoDato.NULO) {
             throw SriIntegrationException.invalidResponse();
         }
         return new Vehiculo(attributes);
