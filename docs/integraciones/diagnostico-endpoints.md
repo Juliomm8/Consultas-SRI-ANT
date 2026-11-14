@@ -15,6 +15,33 @@ Se usaron exclusivamente los centinelas indicados en la actividad:
 
 Estos valores no son identificaciones válidas verificadas. Las respuestas negativas o vacías obtenidas con ellos no demuestran el comportamiento del caso exitoso.
 
+## Actualización — casos exitosos y nueva verificación autorizada
+
+Esta sección registra evidencia resumida de una ronda posterior con datos propios o expresamente autorizados. Los valores personales y los cuerpos completos se omitieron. La fecha y hora de esa ronda no constan en el resumen recibido, por lo que no se asigna una marca temporal inventada. No se repitieron solicitudes HTTP durante la implementación de los adaptadores.
+
+| Servicio | Resultado HTTP y Content-Type | Estructura observada | Caso exitoso | Tiempo |
+|---|---|---|---|---|
+| Existencia de RUC | 200, `application/json` | Booleano JSON `true` | Verificado; el servicio confirmó existencia para el dato autorizado | Aproximadamente 216 ms |
+| Información del contribuyente | 200, `application/json` | Objeto JSON con propiedades `numeroRuc`, `razonSocial`, `estadoContribuyenteRuc`, `actividadEconomicaPrincipal`, `tipoContribuyente`, `regimen`, `categoria`, `obligadoLlevarContabilidad`, `agenteRetencion`, `contribuyenteEspecial`, `informacionFechasContribuyente`, `representantesLegales`, `motivoCancelacionSuspension`, `contribuyenteFantasma` y `transaccionesInexistente` | Verificado; se registraron nombres de propiedades, no valores ni tipos de cada propiedad | No consignado |
+| Información del vehículo | 200, `application/json` | Objeto JSON; campos observados en el elemento vehicular: `codigoVehiculo`, `numeroPlaca`, `numeroCamvCpn`, `descripcionMarca`, `descripcionModelo`, `anioAuto`, `descripcionPais`, `ultimoAnioPagado`, `estadoExoneracion`, `aplicaCuota` y `verMensajeElectricos`. Algunos campos opcionales fueron `null`. | Verificado; no demuestra titularidad respecto de un contribuyente | No consignado |
+| ANT — consulta web | 502 en dos intentos consecutivos, `text/html` | Página HTML genérica de gateway, sin formularios, tablas ni redirecciones | No verificado; no se observó respuesta funcional | No consignado |
+
+Los nombres de propiedades anteriores reflejan el esquema resumido de la prueba autorizada. Los tipos de las propiedades SRI no fueron incluidos en esa evidencia y no se infieren aquí. El adaptador vehicular conserva los tipos JSON escalares recibidos para los campos permitidos, en vez de asignar tipos de negocio no confirmados. La clasificación SRI se mantiene como `NO_DETERMINADA`: aunque se observó `tipoContribuyente`, sus valores y equivalencias con `NATURAL` o `JURIDICA` no fueron verificados.
+
+### Estado de la prueba ANT con placa
+
+El registro de la ejecución anterior indicó `ps_placa` vacío incluso después de la autorización del usuario. Por tanto, no se puede afirmar que la placa se enviara en aquella ronda. Se corrigió `scripts/validar-casos-exitosos.ps1`: ahora una respuesta afirmativa construye y envía una segunda consulta con la placa codificada; una respuesta negativa omite esa consulta y conserva solo la prueba inicial con `ps_placa` vacío. Cada solicitud ANT permite como máximo un único reintento, diez segundos después, solo ante HTTP 502, 503 o 504. Esta corrección se probó sin ejecutar solicitudes HTTP.
+
+## Interpretación actual de las integraciones
+
+- **Contribuyentes SRI:** la existencia se interpreta únicamente desde el booleano JSON. `false` es ausencia confirmada y evita la segunda llamada. `true` habilita la lectura de detalles. HTTP 204, un cuerpo no booleano, JSON ilegible, RUC de respuesta ausente o distinto y errores HTTP son fallos técnicos, no ausencia.
+- **Vehículos SRI:** el adaptador consume el arreglo `data` del objeto de respuesta observado y conserva solo los campos permitidos listados arriba. Una respuesta con `data: []` se traduce en una lista vacía según el formato observado con el centinela; la semántica de todos los casos negativos aún no se confirmó formalmente. Consultar una placa no prueba titularidad.
+- **ANT:** el 502 sigue siendo una falla de gateway/upstream. La página funcional, la extracción de puntos, la necesidad de cookies o sesión, los campos, los selectores y el cálculo de puntos continúan sin verificar. No se almacena una página de error como resultado válido.
+
+Los adaptadores SRI usan HTTP GET y timeouts configurados de 3 segundos para conexión y 5 segundos para lectura. Los errores de red, timeout, HTTP y contenido inválido se representan con excepciones técnicas sanitizadas: no conservan causas HTTP que puedan incluir URL o cuerpos.
+
+Resilience4j está incluido y tiene una configuración nominal `antPoints` (ventana de 5 llamadas, umbral de 50 %, 30 segundos en abierto y 2 llamadas de prueba). La configuración todavía no está conectada a un adaptador ANT. Redis, recuperación desde caché y metadata de datos obsoletos permanecen pendientes porque no existe una respuesta ANT válida que permita definir el modelo. Cuando ANT no esté disponible y aún no haya un resultado validado en caché, el futuro servicio deberá devolver un error controlado de proveedor no disponible; no se debe responder cero puntos.
+
 ## 1. SRI — verificar existencia del RUC
 
 | Campo | Resultado |
