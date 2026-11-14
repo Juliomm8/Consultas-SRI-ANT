@@ -14,7 +14,10 @@ if ($parseErrors.Count -gt 0) {
 $functionNames = @(
     'New-EncodedQuery',
     'New-AntRequestParameters',
-    'Get-OptionalAntRequestParameters'
+    'Get-OptionalAntRequestParameters',
+    'Get-SafeTaxpayerTypeValue',
+    'Get-TaxpayerTypeInspection',
+    'Show-AuthorizedTaxpayerType'
 )
 foreach ($functionName in $functionNames) {
     $functionAst = $ast.Find({
@@ -51,9 +54,53 @@ if (-not $baseline.Contains('ps_placa') -or $baseline['ps_placa'] -cne '') {
     throw 'La solicitud inicial ANT debe conservar ps_placa vacío.'
 }
 
+$taxpayerFixture = '{"numeroRuc":"SYNTHETIC_ID","razonSocial":"SYNTHETIC_PRIVATE_NAME","tipoContribuyente":"TYPE_ALPHA"}'
+$inspection = Get-TaxpayerTypeInspection -Body $taxpayerFixture -StatusCode 200 -ContentType 'application/json' -Truncated $false
+if (-not $inspection.Available -or $inspection.SafeValue -cne 'TYPE_ALPHA') {
+    throw 'La inspección debe conservar únicamente el tipo categórico seguro de una respuesta JSON exitosa.'
+}
+if (($inspection.PSObject.Properties.Name -join ',') -cne 'Available,SafeValue') {
+    throw 'La inspección no debe retornar otros campos de la respuesta.'
+}
+
+foreach ($unsafeValue in @(
+    'SYNTHETIC PERSON NAME',
+    '1234567890123',
+    'SYNTHETIC@EXAMPLE.TEST',
+    'HTTPS://EXAMPLE.TEST',
+    "TYPE_ALPHA`nSYNTHETIC",
+    ('A' * 33),
+    'lowercase'
+)) {
+    if ($null -ne (Get-SafeTaxpayerTypeValue -Value $unsafeValue)) {
+        throw 'Un valor que no tiene formato categórico seguro fue aceptado.'
+    }
+}
+
+$notAuthorizedOutput = @(& { Show-AuthorizedTaxpayerType -Value 'TYPE_ALPHA' -Authorized $false } 6>&1)
+if ($notAuthorizedOutput.Count -ne 0) {
+    throw 'Sin autorización explícita no se debe mostrar el valor categórico.'
+}
+$authorizedOutput = @(& { Show-AuthorizedTaxpayerType -Value 'TYPE_ALPHA' -Authorized $true } 6>&1)
+$displayText = ($authorizedOutput | ForEach-Object { [string]$_.MessageData }) -join ''
+if ($displayText -cne 'tipoContribuyente (valor categórico): TYPE_ALPHA') {
+    throw 'Con autorización se debe mostrar únicamente el valor categórico seguro.'
+}
+$authorizedOutput = $null
+$notAuthorizedOutput = $null
+$displayText = $null
+$inspection = $null
+$taxpayerFixture = $null
+
 $source = Get-Content -LiteralPath $scriptPath -Raw
 if ($source -notmatch '(?m)Read-Host\s+-Prompt\s+\$Prompt\s+-AsSecureString') {
     throw 'La captura segura de identificadores debe usar Read-Host -AsSecureString.'
+}
+if ($source -notmatch '(?m)Read-Host\s+[^\r\n]*autoriza mostrar únicamente el valor categórico seguro' -or
+    $source -notmatch '\$showTaxpayerType\s*=\s*\$taxpayerTypeConsent\s+-match' -or
+    $source -notmatch 'if\s*\(\$showTaxpayerType\s+-and\s+\$null\s+-ne\s+\$taxpayerResult\.SafeTaxpayerTypeValue\)' -or
+    $source -notmatch '\-CaptureTaxpayerType') {
+    throw 'La visualización debe requerir autorización S explícita y una respuesta SRI inspeccionable.'
 }
 if ($source -match '(?im)Write-(?:Host|Output|Verbose|Warning|Error|Information)\s+[^\r\n]*(?:\$ruc|\$cedula|\$plate|\$requestUri|\$query|\$body)') {
     throw 'Se detectó una posible impresión directa de datos personales o parámetros.'

@@ -117,6 +117,61 @@ function Get-JsonShape {
     return Get-ValueTypeName -Value $Value
 }
 
+function Get-SafeTaxpayerTypeValue {
+    param([AllowNull()][AllowEmptyString()][string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) { return $null }
+    $candidate = $Value.Trim()
+    if ($candidate.Length -gt 32 -or $candidate -cnotmatch '^\p{Lu}[\p{Lu}_-]{0,31}$') { return $null }
+    if ($candidate -cmatch '^(?:HTTP|HTTPS|FTP|WWW)(?:$|[_-])') { return $null }
+    return $candidate
+}
+
+function Get-TaxpayerTypeInspection {
+    param(
+        [AllowEmptyString()][string]$Body,
+        [int]$StatusCode,
+        [string]$ContentType,
+        [bool]$Truncated
+    )
+
+    $inspectionAvailable = $false
+    $safeValue = $null
+    if ($StatusCode -ne 200 -or $Truncated -or $ContentType -notmatch '(?i)(^|/|\+)json') {
+        return [pscustomobject]@{ Available = $false; SafeValue = $null }
+    }
+
+    try {
+        $parsed = ConvertFrom-Json -InputObject $Body -AsHashtable -Depth 100 -ErrorAction Stop
+        if ($parsed -is [System.Collections.IDictionary] -and $parsed.Contains('tipoContribuyente')) {
+            $value = $parsed['tipoContribuyente']
+            if ($value -is [string] -and -not [string]::IsNullOrWhiteSpace($value)) {
+                $inspectionAvailable = $true
+                $safeValue = Get-SafeTaxpayerTypeValue -Value $value
+            }
+        }
+    }
+    catch {
+        # Parsing failures are intentionally silent; response content must never enter diagnostics.
+    }
+
+    return [pscustomobject]@{ Available = $inspectionAvailable; SafeValue = $safeValue }
+}
+
+function Show-AuthorizedTaxpayerType {
+    param(
+        [AllowNull()][AllowEmptyString()][string]$Value,
+        [Parameter(Mandatory)][bool]$Authorized
+    )
+
+    if (-not $Authorized) { return }
+    $safeValue = Get-SafeTaxpayerTypeValue -Value $Value
+    if ($null -ne $safeValue) {
+        Write-Host "tipoContribuyente (valor categórico): $safeValue"
+    }
+    $safeValue = $null
+}
+
 function Get-HtmlAttribute {
     param(
         [Parameter(Mandatory)][string]$Tag,
@@ -489,7 +544,8 @@ function Invoke-EndpointGet {
         [Parameter(Mandatory)][string]$BaseUrl,
         [Parameter(Mandatory)][System.Collections.IDictionary]$Parameters,
         [Parameter(Mandatory)][int]$TimeoutSeconds,
-        [Parameter(Mandatory)][int]$MaxBodyCharacters
+        [Parameter(Mandatory)][int]$MaxBodyCharacters,
+        [switch]$CaptureTaxpayerType
     )
 
     $start = [DateTimeOffset]::Now
@@ -511,6 +567,10 @@ function Invoke-EndpointGet {
     $queryParts = $null
     $bodySample = $null
     $analysis = $null
+    $taxpayerTypeInspection = $null
+    $taxpayerTypeInspectionAvailable = $false
+    $safeTaxpayerTypeValue = $null
+    $mediaType = ''
     $phase = 'conexión'
     $statusCode = $null
     $contentType = ''
@@ -574,6 +634,11 @@ function Invoke-EndpointGet {
             $bodySample = Get-BodySample -Response $response -CancellationToken $cancellation.Token -MaximumCharacters $MaxBodyCharacters
             $mediaType = if ($response.Content.Headers.ContentType) { $response.Content.Headers.ContentType.MediaType } else { '' }
             $analysis = Get-ResponseAnalysis -MediaType $mediaType -Body $bodySample.Text -Truncated $bodySample.Truncated -BaseUri $currentUri -MaxBodyCharacters $MaxBodyCharacters
+            if ($CaptureTaxpayerType) {
+                $taxpayerTypeInspection = Get-TaxpayerTypeInspection -Body $bodySample.Text -StatusCode $statusCode -ContentType $mediaType -Truncated $bodySample.Truncated
+                $taxpayerTypeInspectionAvailable = $taxpayerTypeInspection.Available
+                $safeTaxpayerTypeValue = $taxpayerTypeInspection.SafeValue
+            }
         }
     }
     catch {
@@ -606,6 +671,8 @@ function Invoke-EndpointGet {
         $Parameters = $null
         if ($null -ne $bodySample) { $bodySample.Text = $null }
         $bodySample = $null
+        if ($null -ne $taxpayerTypeInspection) { $taxpayerTypeInspection.SafeValue = $null }
+        $taxpayerTypeInspection = $null
     }
 
     $redirectSummary = if ($redirects.Count -gt 0) { $redirects -join '; ' } else { 'ninguna' }
@@ -616,7 +683,7 @@ function Invoke-EndpointGet {
     if ($cacheControl) { $headers.Add("Cache-Control=$cacheControl") }
     if ($retryAfter) { $headers.Add("Retry-After=$retryAfter") }
 
-    return [pscustomobject]@{
+    $result = [pscustomobject]@{
         Service = $Service
         Url = $BaseUrl
         ParameterName = $parameterNames
@@ -638,7 +705,11 @@ function Invoke-EndpointGet {
         TableHeaders = if ($analysis) { $analysis.TableHeaders } else { '' }
         Indicators = if ($analysis) { $analysis.Indicators } else { '' }
         RelevantHeaders = if ($headers.Count -gt 0) { $headers -join '; ' } else { 'ninguno observado' }
+        TaxpayerTypeInspectionAvailable = $taxpayerTypeInspectionAvailable
+        SafeTaxpayerTypeValue = $safeTaxpayerTypeValue
     }
+    $safeTaxpayerTypeValue = $null
+    return $result
 }
 
 function Show-DiagnosticResult {
@@ -725,6 +796,8 @@ function Invoke-PrivateDiagnostics {
     $antBlankResult = $null
     $antBlankParameters = $null
     $antPlateParameters = $null
+    $taxpayerTypeConsent = $null
+    $showTaxpayerType = $false
     try {
         Write-Host 'Los valores se pedirán solo en esta consola mediante SecureString. No se imprimirán ni se guardarán en archivos.'
         Write-Host 'Solo se enviarán al servicio correspondiente si el formato estructural es correcto.'
@@ -741,8 +814,24 @@ function Invoke-PrivateDiagnostics {
 
         if ($existenceResult.StatusCode -eq 200 -and $existenceResult.HasBoolean -and $existenceResult.BooleanValue) {
             $taxpayerUrl = 'https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/ConsolidadoContribuyente/obtenerPorNumerosRuc'
-            $taxpayerResult = Invoke-EndpointGet -Service 'SRI — información del contribuyente' -BaseUrl $taxpayerUrl -Parameters ([ordered]@{ ruc = $ruc }) -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
+            $taxpayerResult = Invoke-EndpointGet -Service 'SRI — información del contribuyente' -BaseUrl $taxpayerUrl -Parameters ([ordered]@{ ruc = $ruc }) -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters -CaptureTaxpayerType
             Show-DiagnosticResult -Result $taxpayerResult
+            if ($taxpayerResult.TaxpayerTypeInspectionAvailable) {
+                $taxpayerTypeConsent = Read-Host 'La consulta del SRI fue exitosa. ¿Autoriza mostrar únicamente el valor categórico seguro de tipoContribuyente? Escriba S para autorizar o N para omitir'
+                $showTaxpayerType = $taxpayerTypeConsent -match '^(?i:s|si|sí)$'
+                $taxpayerTypeConsent = $null
+                if ($showTaxpayerType -and $null -ne $taxpayerResult.SafeTaxpayerTypeValue) {
+                    Show-AuthorizedTaxpayerType -Value $taxpayerResult.SafeTaxpayerTypeValue -Authorized $true
+                }
+                elseif ($showTaxpayerType) {
+                    Write-Host 'No se mostró el valor porque está ausente o no cumple el formato categórico seguro.'
+                }
+                else {
+                    Write-Host 'No se mostró el valor de tipoContribuyente.'
+                }
+                $showTaxpayerType = $false
+                $taxpayerResult.SafeTaxpayerTypeValue = $null
+            }
             $taxpayerResult = $null
         }
         elseif ($existenceResult.StatusCode -eq 200 -and $existenceResult.HasBoolean -and -not $existenceResult.BooleanValue) {
@@ -801,6 +890,8 @@ function Invoke-PrivateDiagnostics {
         $antBlankResult = $null
         $antBlankParameters = $null
         $antPlateParameters = $null
+        $taxpayerTypeConsent = $null
+        $showTaxpayerType = $false
     }
 }
 
