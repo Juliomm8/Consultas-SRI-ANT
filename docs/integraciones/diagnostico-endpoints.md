@@ -23,10 +23,14 @@ Esta sección registra evidencia resumida de una ronda posterior con datos propi
 |---|---|---|---|---|
 | Existencia de RUC | 200, `application/json` | Booleano JSON `true` | Verificado; el servicio confirmó existencia para el dato autorizado | Aproximadamente 216 ms |
 | Información del contribuyente | 200, `application/json` | Objeto JSON con propiedades `numeroRuc`, `razonSocial`, `estadoContribuyenteRuc`, `actividadEconomicaPrincipal`, `tipoContribuyente`, `regimen`, `categoria`, `obligadoLlevarContabilidad`, `agenteRetencion`, `contribuyenteEspecial`, `informacionFechasContribuyente`, `representantesLegales`, `motivoCancelacionSuspension`, `contribuyenteFantasma` y `transaccionesInexistente` | Verificado; se registraron nombres de propiedades, no valores ni tipos de cada propiedad | No consignado |
-| Información del vehículo | 200, `application/json` | Objeto JSON; campos observados en el elemento vehicular: `codigoVehiculo`, `numeroPlaca`, `numeroCamvCpn`, `descripcionMarca`, `descripcionModelo`, `anioAuto`, `descripcionPais`, `ultimoAnioPagado`, `estadoExoneracion`, `aplicaCuota` y `verMensajeElectricos`. Algunos campos opcionales fueron `null`. | Verificado; no demuestra titularidad respecto de un contribuyente | No consignado |
+| Información del vehículo | 200, `application/json` | Objeto JSON directamente en la raíz, con campos como `codigoVehiculo`, `numeroPlaca`, `numeroCamvCpn`, `descripcionMarca`, `descripcionModelo`, `anioAuto`, `descripcionPais`, `ultimoAnioPagado`, `estadoExoneracion`, `aplicaCuota` y `verMensajeElectricos`. Algunos campos opcionales fueron `null`. | Verificado; no demuestra titularidad respecto de un contribuyente | No consignado |
 | ANT — consulta web | 502 en dos intentos consecutivos, `text/html` | Página HTML genérica de gateway, sin formularios, tablas ni redirecciones | No verificado; no se observó respuesta funcional | No consignado |
 
-Los nombres de propiedades anteriores reflejan el esquema resumido de la prueba autorizada. Los tipos de las propiedades SRI no fueron incluidos en esa evidencia y no se infieren aquí. El adaptador vehicular conserva los tipos JSON escalares recibidos para los campos permitidos, en vez de asignar tipos de negocio no confirmados. La clasificación SRI se mantiene como `NO_DETERMINADA`: aunque se observó `tipoContribuyente`, sus valores y equivalencias con `NATURAL` o `JURIDICA` no fueron verificados.
+Los nombres de propiedades anteriores reflejan el esquema resumido de la prueba autorizada. Los tipos de las propiedades SRI no fueron incluidos en esa evidencia y no se infieren aquí, salvo `tipoContribuyente`, observado como `string`; su valor categórico no se registró. El adaptador vehicular conserva los tipos JSON escalares recibidos para los campos permitidos, en vez de asignar tipos de negocio no confirmados. La clasificación SRI se mantiene como `NO_DETERMINADA`: no se conocen valores confirmados de `tipoContribuyente` ni sus equivalencias con `NATURAL` o `JURIDICA`.
+
+La respuesta vehicular positiva observada es un objeto con los campos del vehículo directamente en la raíz. La respuesta negativa del diagnóstico inicial es otra estructura: un objeto envolvente con `mensajeServidor`, `objeto: null` y `data: []`. No se toma `data: []` como prueba universal de inexistencia; solo se registra el resultado de esa solicitud centinela. El adaptador y sus pruebas distinguen ambas formas. Las pruebas automatizadas usan JSON sintético y no vuelven a llamar a SRI.
+
+El script `scripts/validar-casos-exitosos.ps1` puede mostrar el valor de `tipoContribuyente` únicamente tras una autorización S explícita y solo si supera un filtro conservador de texto categórico breve. La salida se limita a ese campo; el resto del cuerpo y los valores personales se omiten. Las pruebas locales del script usan fixtures sintéticos y no hacen solicitudes HTTP. Este mecanismo no determina ni cambia el mapeo de dominio, que sigue pendiente de confirmar.
 
 ### Estado de la prueba ANT con placa
 
@@ -35,7 +39,7 @@ El registro de la ejecución anterior indicó `ps_placa` vacío incluso después
 ## Interpretación actual de las integraciones
 
 - **Contribuyentes SRI:** la existencia se interpreta únicamente desde el booleano JSON. `false` es ausencia confirmada y evita la segunda llamada. `true` habilita la lectura de detalles. HTTP 204, un cuerpo no booleano, JSON ilegible, RUC de respuesta ausente o distinto y errores HTTP son fallos técnicos, no ausencia.
-- **Vehículos SRI:** el adaptador consume el arreglo `data` del objeto de respuesta observado y conserva solo los campos permitidos listados arriba. Una respuesta con `data: []` se traduce en una lista vacía según el formato observado con el centinela; la semántica de todos los casos negativos aún no se confirmó formalmente. Consultar una placa no prueba titularidad.
+- **Vehículos SRI:** la respuesta positiva observada contiene el vehículo directamente en el objeto raíz. El adaptador la convierte en una lista de un elemento, como exige el puerto actual, y conserva solo los campos permitidos listados arriba. También admite el envoltorio con `data` como compatibilidad: `data: []` produce una lista vacía, pero su semántica más allá del centinela no está confirmada; el arreglo no vacío se conserva como variante no verificada. JSON mal formado, campos obligatorios ausentes (`codigoVehiculo`) o formas desconocidas son errores de respuesta. Consultar una placa no prueba titularidad.
 - **ANT:** el 502 sigue siendo una falla de gateway/upstream. La página funcional, la extracción de puntos, la necesidad de cookies o sesión, los campos, los selectores y el cálculo de puntos continúan sin verificar. No se almacena una página de error como resultado válido.
 
 Los adaptadores SRI usan HTTP GET y timeouts configurados de 3 segundos para conexión y 5 segundos para lectura. Los errores de red, timeout, HTTP y contenido inválido se representan con excepciones técnicas sanitizadas: no conservan causas HTTP que puedan incluir URL o cuerpos.
@@ -57,8 +61,8 @@ Resilience4j está incluido y tiene una configuración nominal `antPoints` (vent
 | Redirecciones | Ninguna |
 | Estructura | JSON primitivo booleano: `false` |
 | Resultado | Host y ruta respondieron; el centinela produjo un resultado negativo. No se puede distinguir con esta prueba si `false` expresa solo inexistencia o también formato no aceptado. |
-| Caso exitoso | No verificado |
-| Limitaciones | No se consultó un RUC de prueba válido autorizado. La respuesta no valida por sí sola el algoritmo ni las reglas de persona natural. |
+| Caso exitoso | No verificado con el centinela; una consulta posterior autorizada devolvió HTTP 200 y JSON booleano `true` (ver sección de casos exitosos). |
+| Limitaciones | La prueba con centinela no valida el algoritmo ni las reglas de persona natural. |
 
 El encabezado `Cache-Control` observado fue `no-store, must-revalidate, no-cache, max-age=0`. Se recibió un encabezado `Set-Cookie`; su valor no se guardó. La solicitud se completó sin enviar cookies, lo que no demuestra si una secuencia válida posterior las necesitaría.
 
@@ -77,8 +81,8 @@ El encabezado `Cache-Control` observado fue `no-store, must-revalidate, no-cache
 | Redirecciones | Ninguna |
 | Estructura | Respuesta sin cuerpo |
 | Resultado | El host y la ruta respondieron con 204 para el centinela; no se devolvieron objeto, lista, mensaje ni campos que se puedan inspeccionar. |
-| Caso exitoso | No verificado |
-| Limitaciones | No se puede determinar si 204 significa identificación inexistente, parámetro rechazado u otra condición del servicio. Hace falta un RUC de prueba válido autorizado o documentación oficial de la semántica. |
+| Caso exitoso | No verificado con el centinela; una consulta posterior autorizada devolvió HTTP 200 con un objeto JSON y los nombres de propiedades descritos arriba. |
+| Limitaciones | No se puede determinar si 204 significa identificación inexistente, parámetro rechazado u otra condición del servicio. El valor de `tipoContribuyente` aún no está confirmado para el mapeo de dominio. |
 
 También se observaron `Cache-Control: no-store, must-revalidate, no-cache, max-age=0` y `Set-Cookie` (valor omitido). No se enviaron cookies.
 
@@ -95,10 +99,10 @@ También se observaron `Cache-Control: no-store, must-revalidate, no-cache, max-
 | Content-Type | `application/json` |
 | Tiempo | 57 ms |
 | Redirecciones | Ninguna |
-| Estructura | Objeto JSON con `mensajeServidor` (objeto con `texto` de tipo string), `objeto` (null) y `data` (arreglo vacío). No se conservó el valor de `texto`. |
-| Resultado | La ruta respondió y entregó JSON con arreglo `data` vacío para el centinela. No se observó información de vehículo ni propietario. |
-| Caso exitoso | No verificado |
-| Limitaciones | Se necesita una placa, CAMPV o CPN de prueba autorizado para conocer el esquema de un resultado con datos. Una búsqueda por placa tampoco demuestra titularidad respecto de un contribuyente. |
+| Estructura | Para el centinela: objeto con `mensajeServidor` (objeto con `texto` string), `objeto: null` y `data: []`. En una consulta autorizada posterior: objeto JSON vehicular directamente en la raíz; campos observados listados en la sección de casos exitosos. |
+| Resultado | La ruta respondió con `data: []` para el centinela. Una consulta autorizada posterior sí devolvió un objeto vehicular raíz; algunos campos opcionales fueron null. |
+| Caso exitoso | Verificado en la consulta autorizada posterior; los valores personales no se conservaron. |
+| Limitaciones | La semántica general de `data: []` no está confirmada y no equivale por sí sola a inexistencia definitiva. Una búsqueda por placa tampoco demuestra titularidad respecto de un contribuyente. |
 
 Se observaron `Cache-Control: no-store, must-revalidate, no-cache, max-age=0` y `Set-Cookie` (valor omitido). La petición funcionó sin enviar cookies, pero eso no verifica todas las condiciones de una consulta válida.
 
@@ -124,24 +128,24 @@ El cuerpo observado no mostró formularios ni tablas ni un título de autenticac
 
 ## Comparación
 
-| Servicio | Accesibilidad observada | Respuesta del centinela | Caso exitoso |
+| Servicio | Accesibilidad observada | Respuestas observadas | Caso exitoso |
 |---|---|---|---|
-| SRI existencia RUC | Accesible: HTTP 200 | JSON booleano `false` | No verificado |
-| SRI información contribuyente | Accesible: HTTP 204 | Sin cuerpo ni Content-Type | No verificado |
-| SRI vehículo | Accesible: HTTP 200 | JSON con `data: []`, `objeto: null` y `mensajeServidor.texto` string | No verificado |
+| SRI existencia RUC | Accesible: HTTP 200 | Centinela: JSON booleano `false`; prueba autorizada posterior: booleano `true` | Verificado con dato autorizado |
+| SRI información contribuyente | Accesible: centinela HTTP 204; prueba autorizada posterior HTTP 200 | Centinela sin cuerpo; caso autorizado con objeto JSON | Verificado con dato autorizado |
+| SRI vehículo | Accesible: HTTP 200 | Centinela: envoltorio con `data: []`; caso autorizado: objeto vehicular en la raíz | Verificado con dato autorizado |
 | ANT | No verificable funcionalmente: HTTP 502 HTML | Página de gateway | No verificable |
 
 Los dos primeros servicios SRI y el de vehículo son accesibles desde este entorno con las rutas y parámetros utilizados. Las respuestas con centinelas no son casos exitosos. ANT devolvió HTTP 502, que se registra como limitación de esta prueba y no como evidencia suficiente de que el servicio esté roto.
 
 ## Análisis arquitectónico y decisiones pendientes
 
-1. **Consumo Java del SRI.** Las tres rutas SRI aceptaron conexiones HTTPS y devolvieron respuestas HTTP sin que el diagnóstico enviara cookies o credenciales. Esto hace viable probar un cliente HTTP Java en un siguiente bloque. Aún hay que verificar el resultado con datos de prueba autorizados y definir la semántica de 204, respuestas negativas, errores HTTP y esquemas completos.
-2. **Estructuras observadas.** La verificación de existencia devuelve un booleano JSON. La consulta del contribuyente produjo 204 sin cuerpo con el centinela. La consulta vehicular devuelve un objeto JSON con las propiedades observadas arriba, pero sin elementos en `data`. No se deben convertir estos resultados de prueba en modelos de dominio completos.
-3. **Vehículos.** La ruta está técnicamente accesible y la respuesta JSON es analizable. La consulta exitosa y sus atributos reales siguen pendientes. La respuesta por placa no prueba que el vehículo pertenezca al contribuyente consultado.
+1. **Consumo Java del SRI.** Las tres rutas SRI aceptaron conexiones HTTPS y devolvieron respuestas HTTP sin que el diagnóstico enviara cookies o credenciales. Las consultas autorizadas posteriores verificaron respuestas exitosas para existencia, información del contribuyente y vehículo. Aún falta confirmar la clasificación contenida en `tipoContribuyente` y la semántica general de 204 y `data: []`.
+2. **Estructuras observadas.** La verificación de existencia devuelve un booleano JSON. Con el centinela, la consulta del contribuyente produjo 204 sin cuerpo y la vehicular produjo un envoltorio con `data: []`. En consultas autorizadas posteriores, el contribuyente devolvió un objeto JSON y el vehículo un objeto JSON directamente en la raíz. El valor de `tipoContribuyente` sigue omitido; no se deben convertir campos no confirmados en un modelo de dominio.
+3. **Vehículos.** La ruta está técnicamente accesible y se verificó una respuesta exitosa con un objeto raíz. El adaptador mapea esa forma a una lista de un vehículo y conserva el soporte para el envoltorio `data`. La respuesta por placa no prueba que el vehículo pertenezca al contribuyente consultado.
 4. **ANT y extracción.** La única respuesta HTML fue la página `502 Bad Gateway`; no era la página funcional JSP. Por eso no hay evidencia para decidir si el resultado ANT es HTML o JSON, qué selectores serían estables ni cómo extraer puntos. No se intentó evadir controles de acceso.
 5. **Sesiones y cookies.** El SRI incluyó `Set-Cookie` en las tres respuestas, pero las peticiones de esta prueba no enviaron cookies y aun así obtuvieron HTTP 200/204. Esto no demuestra que una consulta exitosa o una secuencia ANT no requiera sesión. Para ANT la condición continúa desconocida.
-6. **Normalización de adaptadores.** El adaptador SRI tendrá que normalizar la respuesta booleana de existencia y separar claramente ausencia de errores técnicos. Para información y vehículos tendrá que manejar 204, JSON vacío y el objeto JSON observado sin asumir campos aún no confirmados. El adaptador ANT no debe implementarse hasta observar una respuesta funcional y determinar una fuente y formato permitidos.
-7. **Datos para probar éxito.** Hace falta documentación oficial con un ejemplo no personal o datos de prueba autorizados para RUC válido, persona natural y vehículo. Para ANT también hace falta una respuesta funcional accesible y confirmar el propósito de `ps_placa`. No se usaron identificaciones reales.
+6. **Normalización de adaptadores.** Los adaptadores SRI normalizan la respuesta booleana de existencia, separan ausencia de errores técnicos y manejan las formas observadas para información del contribuyente y vehículos. El valor de `tipoContribuyente` sigue pendiente para clasificar persona natural sin inferencias. El adaptador ANT no debe implementarse hasta observar una respuesta funcional y determinar una fuente y formato permitidos.
+7. **Datos para completar la verificación.** Los casos autorizados confirmaron respuestas exitosas de existencia, información del contribuyente y vehículo; no se guardaron sus valores personales. Para completar el mapeo de persona natural falta confirmar el valor categórico de `tipoContribuyente`. Para ANT hace falta una respuesta funcional accesible y confirmar el propósito de `ps_placa`. No se incorporaron identificaciones al repositorio.
 8. **RUC y cédula.** No se verificó una regla oficial que permita obtener una cédula a partir de los primeros diez dígitos de cualquier RUC de persona natural. El servidor no debe confiar en una cédula arbitraria del navegador ni derivarla sin una regla confirmada.
 9. **Correo electrónico.** Los endpoints diagnosticados no requieren ni recibieron email. Hasta que el contrato del proveedor o los requisitos de privacidad indiquen lo contrario, el correo se queda en el flujo de la aplicación y no se envía a SRI ni ANT.
 10. **Resilience4j futuro.** Conviene tratar timeouts, errores DNS/TLS/conexión, respuestas 5xx (incluido un 502) y respuestas ilegibles/incompatibles con el esquema como fallos técnicos del proveedor. Una política de reintentos acotada debe considerar que son GET y respetar `Retry-After` si aparece. Entradas inválidas, resultados negativos confirmados y ausencia de datos no deben contabilizarse automáticamente como indisponibilidad. La política definitiva dependerá de los códigos y esquemas verificados.
