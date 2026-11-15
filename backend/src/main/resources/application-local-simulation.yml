@@ -1,0 +1,9 @@
+server:
+  address: 127.0.0.1
+
+app:
+  ant:
+    simulation:
+      enabled: true
+      scenario: ${ANT_SIMULATION_SCENARIO:SUCCESS}
+      total-points: ${ANT_SIMULATION_TOTAL_POINTS:20}

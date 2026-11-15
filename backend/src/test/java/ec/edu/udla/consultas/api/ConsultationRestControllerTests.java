@@ -254,7 +254,7 @@ class ConsultationRestControllerTests {
     @Test
     void unexpectedErrorDoesNotExposeInternalExceptionDetails() throws Exception {
         when(vehicleUseCase.consultar(any())).thenThrow(
-                new IllegalStateException("PRIVATE_SYNTHETIC_PLATE_1234 and private provider detail"));
+                new IllegalStateException("synthetic provider failure"));
 
         MvcResult result = mockMvc.perform(post(VEHICLE_PATH)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -263,8 +263,8 @@ class ConsultationRestControllerTests {
                 .andExpect(jsonPath("$.error.code").value("INTERNAL_ERROR"))
                 .andReturn();
 
-        assertErrorIsSanitized(result, "$.error.requestId", "PRIVATE_SYNTHETIC_PLATE_1234",
-                "private provider detail", "IllegalStateException", SYNTHETIC_PLATE);
+        assertErrorIsSanitized(result, "$.error.requestId", "synthetic provider failure",
+                "IllegalStateException", SYNTHETIC_PLATE);
     }
 
     private MvcResult postTaxpayerExpectingError(int statusCode, String code) throws Exception {

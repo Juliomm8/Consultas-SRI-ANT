@@ -4,6 +4,9 @@ import ec.edu.udla.consultas.contribuyentes.application.exception.ContribuyenteN
 import ec.edu.udla.consultas.contribuyentes.application.exception.ContribuyenteNoEsPersonaNaturalException;
 import ec.edu.udla.consultas.contribuyentes.application.exception.TipoPersonaNoDeterminadaException;
 import ec.edu.udla.consultas.contribuyentes.domain.exception.RucFormatoInvalidoException;
+import ec.edu.udla.consultas.puntos.application.exception.PuntosLicenciaProviderException;
+import ec.edu.udla.consultas.puntos.application.exception.PuntosLicenciaSinInformacionException;
+import ec.edu.udla.consultas.puntos.domain.exception.CedulaFormatoInvalidoException;
 import ec.edu.udla.consultas.shared.integration.sri.SriIntegrationException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -15,13 +18,19 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String INTERNAL_ERROR_CODE = "INTERNAL_ERROR";
+    private static final String APPLICATION_PACKAGE_PREFIX = "ec.edu.udla.consultas.";
+    private static final int MAX_CAUSE_DEPTH = 8;
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -55,6 +64,53 @@ public class GlobalExceptionHandler {
                 "VALIDATION_ERROR",
                 "Los datos enviados no son válidos.",
                 request);
+    }
+
+    @ExceptionHandler(CedulaFormatoInvalidoException.class)
+    public ResponseEntity<ApiError> handleInvalidCedula(
+            CedulaFormatoInvalidoException exception,
+            HttpServletRequest request) {
+        return errorResponse(
+                HttpStatus.BAD_REQUEST,
+                "VALIDATION_ERROR",
+                "Los datos enviados no son válidos.",
+                request);
+    }
+
+    @ExceptionHandler(PuntosLicenciaSinInformacionException.class)
+    public ResponseEntity<ApiError> handlePointsNotFound(
+            PuntosLicenciaSinInformacionException exception,
+            HttpServletRequest request) {
+        return errorResponse(
+                HttpStatus.NOT_FOUND,
+                "NOT_FOUND",
+                "No se encontró información de puntos de licencia.",
+                request);
+    }
+
+    @ExceptionHandler(PuntosLicenciaProviderException.class)
+    public ResponseEntity<ApiError> handlePointsProviderFailure(
+            PuntosLicenciaProviderException exception,
+            HttpServletRequest request) {
+        String requestId = requestId(request);
+        String code = switch (exception.kind()) {
+            case TIMEOUT -> "PROVIDER_TIMEOUT";
+            case UNAVAILABLE -> "PROVIDER_UNAVAILABLE";
+            case INVALID_RESPONSE -> "PROVIDER_BAD_RESPONSE";
+        };
+        HttpStatus status = switch (exception.kind()) {
+            case TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
+            case UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
+            case INVALID_RESPONSE -> HttpStatus.BAD_GATEWAY;
+        };
+        LOGGER.warn("ANT points provider failed; requestId={}, errorCode={}, kind={}",
+                requestId, code, exception.kind());
+        String message = switch (exception.kind()) {
+            case TIMEOUT -> "El servicio de puntos de licencia excedió el tiempo de espera.";
+            case UNAVAILABLE -> "El servicio de puntos de licencia no está disponible.";
+            case INVALID_RESPONSE -> "El servicio de puntos de licencia devolvió una respuesta no utilizable.";
+        };
+        return errorResponse(status, code, message, request, requestId);
     }
 
     @ExceptionHandler(ContribuyenteNoEncontradoException.class)
@@ -94,22 +150,40 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleSriFailure(
             SriIntegrationException exception,
             HttpServletRequest request) {
+        String requestId = requestId(request);
+        LOGGER.warn(
+                "SRI integration failed; requestId={}, errorCode={}, kind={}, upstreamStatus={}",
+                requestId,
+                sriErrorCode(exception.kind()),
+                exception.kind(),
+                exception.upstreamStatus());
         return switch (exception.kind()) {
             case TIMEOUT -> errorResponse(
                     HttpStatus.GATEWAY_TIMEOUT,
                     "PROVIDER_TIMEOUT",
                     "El servicio SRI excedió el tiempo de espera.",
-                    request);
+                    request,
+                    requestId);
             case UNAVAILABLE -> errorResponse(
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "PROVIDER_UNAVAILABLE",
                     "El servicio SRI no está disponible.",
-                    request);
+                    request,
+                    requestId);
             case HTTP_ERROR, INVALID_RESPONSE -> errorResponse(
                     HttpStatus.BAD_GATEWAY,
                     "PROVIDER_BAD_RESPONSE",
                     "El servicio SRI devolvió una respuesta no utilizable.",
-                    request);
+                    request,
+                    requestId);
+        };
+    }
+
+    private static String sriErrorCode(SriIntegrationException.Kind kind) {
+        return switch (kind) {
+            case TIMEOUT -> "PROVIDER_TIMEOUT";
+            case UNAVAILABLE -> "PROVIDER_UNAVAILABLE";
+            case HTTP_ERROR, INVALID_RESPONSE -> "PROVIDER_BAD_RESPONSE";
         };
     }
 
@@ -118,21 +192,80 @@ public class GlobalExceptionHandler {
             Exception exception,
             HttpServletRequest request) {
         String requestId = requestId(request);
-        String stackTrace = Arrays.stream(exception.getStackTrace())
-                .map(StackTraceElement::toString)
-                .collect(Collectors.joining(" | "));
+        SafeExceptionDetails details = safeExceptionDetails(exception);
         LOGGER.error(
-                "Unexpected API error; requestId={}, exceptionType={}, stackTrace={}",
+                "Unexpected API error; requestId={}, operation={}, errorCode={}, httpStatus={}, "
+                        + "exceptionTypes={}, locationClass={}, locationMethod={}, locationLine={}",
                 requestId,
-                exception.getClass().getName(),
-                stackTrace);
+                operationFor(request),
+                INTERNAL_ERROR_CODE,
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                details.exceptionTypes(),
+                details.locationClass(),
+                details.locationMethod(),
+                details.locationLine());
 
         return errorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "INTERNAL_ERROR",
+                INTERNAL_ERROR_CODE,
                 "Ocurrió un error interno. Inténtalo más tarde.",
                 request,
                 requestId);
+    }
+
+    private static String operationFor(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        if (contextPath != null && !contextPath.isEmpty() && path.startsWith(contextPath)) {
+            path = path.substring(contextPath.length());
+        }
+
+        if ("POST".equals(request.getMethod()) && "/api/v1/contribuyentes/consultas".equals(path)) {
+            return "taxpayer-consultation";
+        }
+        if ("POST".equals(request.getMethod()) && "/api/v1/vehiculos/consultas".equals(path)) {
+            return "vehicle-consultation";
+        }
+        if ("POST".equals(request.getMethod()) && "/api/v1/licencias/puntos/consultas".equals(path)) {
+            return "license-points-consultation";
+        }
+        return "unmapped";
+    }
+
+    private static SafeExceptionDetails safeExceptionDetails(Throwable exception) {
+        List<String> exceptionTypes = new ArrayList<>();
+        Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        String locationClass = "unavailable";
+        String locationMethod = "unavailable";
+        int locationLine = -1;
+
+        Throwable current = exception;
+        while (current != null && visited.add(current) && exceptionTypes.size() < MAX_CAUSE_DEPTH) {
+            String exceptionType = current.getClass().getSimpleName();
+            exceptionTypes.add(exceptionType.isBlank() ? "UnknownException" : exceptionType);
+
+            if ("unavailable".equals(locationClass)) {
+                for (StackTraceElement frame : current.getStackTrace()) {
+                    if (frame.getClassName().startsWith(APPLICATION_PACKAGE_PREFIX)) {
+                        locationClass = frame.getClassName();
+                        locationMethod = frame.getMethodName();
+                        locationLine = frame.getLineNumber();
+                        break;
+                    }
+                }
+            }
+            current = current.getCause();
+        }
+
+        return new SafeExceptionDetails(
+                List.copyOf(exceptionTypes), locationClass, locationMethod, locationLine);
+    }
+
+    private record SafeExceptionDetails(
+            List<String> exceptionTypes,
+            String locationClass,
+            String locationMethod,
+            int locationLine) {
     }
 
     private ResponseEntity<ApiError> errorResponse(
