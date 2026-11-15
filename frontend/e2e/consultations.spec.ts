@@ -84,6 +84,7 @@ test('consulta contribuyente y vehículo recorre React, Vite, Spring Boot y el s
   await page.goto('/')
   await page.setViewportSize({ width: 1440, height: 1000 })
   await expect(page.getByRole('heading', { name: /consulta de contribuyente/i })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Etapas de consulta' }).getByRole('listitem')).toHaveCount(2)
   await captureUiEvidence(page, 'home-1440.png')
 
   await enterTaxpayerDetails(page, syntheticSuccessRuc)
@@ -193,10 +194,20 @@ test('mantiene la portada usable y sin desbordamiento en los anchos objetivo', a
 
   await page.setViewportSize({ width: 390, height: 844 })
   await page.reload()
-  const menu = page.locator('.menu-toggle')
+  const skipLink = page.getByRole('link', { name: 'Saltar al contenido principal' })
+  await page.keyboard.press('Tab')
+  await expect(skipLink).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/#main-content$/)
+  await expect(page.locator('#main-content')).toBeFocused()
+
+  await page.reload()
+  await page.keyboard.press('Tab')
+  await expect(skipLink).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(page.getByRole('link', { name: 'Consultas SRI ANT, inicio' })).toBeFocused()
   await page.keyboard.press('Tab')
+  const menu = page.locator('.menu-toggle')
   await expect(menu).toBeFocused()
   const menuFocusStyle = await menu.evaluate((element) => {
     const style = getComputedStyle(element)
@@ -218,5 +229,7 @@ test('mantiene la portada usable y sin desbordamiento en los anchos objetivo', a
   await navigation.getByRole('link', { name: 'Estado ANT' }).click()
   await expect(page).toHaveURL(/#estado-ant$/)
   await expect(page.getByRole('heading', { name: /puntos de licencia ant/i })).toBeVisible()
+  await page.getByRole('link', { name: 'Volver arriba' }).click()
+  await expect(page).toHaveURL(/#inicio$/)
   expect(externalBrowserRequestObserved).toBe(false)
 })

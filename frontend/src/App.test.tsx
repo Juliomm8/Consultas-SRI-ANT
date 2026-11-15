@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -68,9 +68,13 @@ describe('Portal de consultas', () => {
     expect(officialLink).toHaveAttribute('href', 'https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor')
     expect(officialLink).toHaveAttribute('target', '_blank')
     expect(officialLink).toHaveAttribute('rel', 'noopener noreferrer')
-    expect(screen.getByRole('navigation', { name: 'Etapas de consulta' })).toBeInTheDocument()
+    const progress = screen.getByRole('navigation', { name: 'Etapas de consulta' })
+    expect(within(progress).getAllByRole('listitem')).toHaveLength(2)
     expect(screen.getByRole('link', { name: /comenzar consulta/i })).toHaveAttribute('href', '#consulta')
     expect(screen.getByRole('navigation', { name: 'Navegación principal' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Saltar al contenido principal' })).toHaveAttribute('href', '#main-content')
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content')
+    expect(screen.getByRole('link', { name: /volver arriba/i })).toHaveAttribute('href', '#inicio')
     expect(screen.queryByLabelText(/cédula|pasaporte|identificación/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/resultado de puntos/i)).not.toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
@@ -81,6 +85,8 @@ describe('Portal de consultas', () => {
     const user = userEvent.setup()
     render(<App />)
 
+    expect(screen.getByLabelText(/correo electrónico/i)).toBeRequired()
+    expect(screen.getByLabelText(/^RUC/i)).toBeRequired()
     await user.type(screen.getByLabelText(/correo electrónico/i), 'correo-inválido')
     await user.type(screen.getByLabelText(/^RUC/i), '12345')
     await user.click(screen.getByRole('button', { name: /consultar contribuyente/i }))
@@ -190,6 +196,7 @@ describe('Portal de consultas', () => {
     const user = userEvent.setup()
     render(<App />)
     await openVehicleStep(user)
+    expect(screen.getByLabelText(/^Placa/i)).toBeRequired()
     await user.type(screen.getByLabelText(/^Placa/i), 'ABC-1234')
     await user.click(screen.getByRole('button', { name: /consultar vehículo/i }))
 
@@ -278,6 +285,28 @@ describe('Portal de consultas', () => {
     expect(alert).not.toHaveTextContent(syntheticEmail)
     expect(alert).not.toHaveTextContent(syntheticRuc)
     expect(alert).not.toHaveTextContent('detalle interno')
+  })
+
+  it('distingue un HTTP 404 sin código contractual de NOT_FOUND', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      error: {
+        code: 'UNRECOGNIZED_ROUTE_ERROR',
+        message: `Detalle técnico con ${syntheticEmail} y ${syntheticRuc}`,
+        requestId,
+      },
+    }, 404))
+    render(<App />)
+
+    await submitTaxpayer(user)
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('No se pudo acceder al endpoint solicitado. Inténtalo más tarde.')
+    expect(alert).toHaveTextContent(requestId)
+    expect(alert).not.toHaveTextContent('No encontramos información para la identificación consultada.')
+    expect(alert).not.toHaveTextContent(syntheticEmail)
+    expect(alert).not.toHaveTextContent(syntheticRuc)
+    expect(alert).not.toHaveTextContent('Detalle técnico')
   })
 
   it('usa el encabezado X-Request-Id como referencia segura cuando el cuerpo no tiene uno válido', async () => {

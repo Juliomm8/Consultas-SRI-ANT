@@ -118,6 +118,7 @@ function App() {
 
   return (
     <div className="site-frame">
+      <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
       <header className="site-header">
         <div className="site-header__inner">
           <a className="brand" href="#inicio" aria-label="Consultas SRI ANT, inicio" onClick={closeNavigation}>
@@ -167,7 +168,7 @@ function App() {
         </div>
       </header>
 
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <div className="page-shell">
           <section className="hero" id="inicio" aria-labelledby="page-title" tabIndex={-1}>
             <figure className="hero__visual">
@@ -281,10 +282,6 @@ function App() {
                 <li className={vehicleResult ? 'step step--complete' : taxpayerResult ? 'step step--current' : 'step step--pending'} aria-current={taxpayerResult && !vehicleResult ? 'step' : undefined}>
                   <span className="step__number">{vehicleResult ? <PortalIcon name="check" /> : '02'}</span>
                   <span className="step__copy"><strong>Vehículo</strong><small>{taxpayerResult ? 'Consulta SRI' : 'Después de validar'}</small></span>
-                </li>
-                <li className="step step--pending">
-                  <span className="step__number">03</span>
-                  <span className="step__copy"><strong>Puntos ANT</strong><small>Integración pendiente</small></span>
                 </li>
               </ol>
             </nav>
@@ -451,7 +448,7 @@ function App() {
             <span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 38 38" fill="none"><path d="M25.7 10.6a11.2 11.2 0 1 0 0 16.8" /><path d="M12.1 19h13.4M19 12.3v13.4" /></svg></span>
             <span className="brand-copy"><span className="brand-name">Consultas <b>SRI · ANT</b></span><span className="brand-caption">Proyecto académico independiente</span></span>
           </a>
-          <div className="site-footer__disclaimer"><span>Una experiencia académica · No es un portal institucional</span><a href="#servicios">Volver arriba <PortalIcon name="arrow-up-right" /></a></div>
+          <div className="site-footer__disclaimer"><span>Una experiencia académica · No es un portal institucional</span><a href="#inicio">Volver arriba <PortalIcon name="arrow-up-right" /></a></div>
         </div>
       </footer>
     </div>

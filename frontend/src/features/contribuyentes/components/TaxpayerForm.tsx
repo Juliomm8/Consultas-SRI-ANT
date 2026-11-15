@@ -50,6 +50,7 @@ export function TaxpayerForm({ disabled, isLoading, onSubmit }: TaxpayerFormProp
               id="taxpayer-email"
               maxLength={254}
               name="email"
+              required
               onChange={(event) => {
                 setEmail(event.target.value)
                 setEmailError('')
@@ -77,6 +78,7 @@ export function TaxpayerForm({ disabled, isLoading, onSubmit }: TaxpayerFormProp
               inputMode="numeric"
               maxLength={13}
               name="ruc"
+              required
               onChange={(event) => {
                 setRuc(event.target.value)
                 setRucError('')

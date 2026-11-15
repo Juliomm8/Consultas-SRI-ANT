@@ -56,7 +56,7 @@ function safeRequestId(value: unknown): string | undefined {
 
 function fallbackMessage(status: number): string {
   if (status === 400) return safeMessages.VALIDATION_ERROR
-  if (status === 404) return safeMessages.NOT_FOUND
+  if (status === 404) return 'No se pudo acceder al endpoint solicitado. Inténtalo más tarde.'
   if (status === 422) return 'La solicitud no cumple una condición necesaria para continuar.'
   if (status === 502) return safeMessages.PROVIDER_BAD_RESPONSE
   if (status === 503) return safeMessages.PROVIDER_UNAVAILABLE

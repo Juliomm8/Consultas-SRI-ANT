@@ -35,6 +35,7 @@ export function VehicleForm({ isLoading, onSubmit }: VehicleFormProps) {
               disabled={isLoading}
               id="vehicle-plate"
               name="placa"
+              required
               onChange={(event) => {
                 setPlate(event.target.value)
                 setPlateError('')

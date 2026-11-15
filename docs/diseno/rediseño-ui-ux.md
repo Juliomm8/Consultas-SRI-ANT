@@ -28,7 +28,7 @@ Los tokens están definidos en `frontend/src/index.css` y los componentes de pá
 1. **Header:** marca propia, etiqueta académica, navegación por anclas y CTA. En móvil, la navegación abre un menú controlable por teclado.
 2. **Hero fotográfico:** carretera andina local en WebP, overlay oscuro, titular principal, CTA hacia el formulario y nota de alcance.
 3. **Servicios:** dos consultas SRI con fotografías contextualizadas y el componente `AntStatusCard` como tercer elemento, destacado como pendiente.
-4. **Consulta:** introducción al flujo, pasos numerados y paneles independientes para contribuyente y vehículo.
+4. **Consulta:** el flujo SRI tiene dos etapas numeradas: contribuyente y vehículo. El vehículo aparece después de confirmar una persona natural. ANT es un servicio independiente del catálogo y no es una etapa obligatoria.
 5. **Ayuda contextual:** pasos siguientes, aviso de privacidad, aclaración sobre titularidad y disponibilidad externa.
 6. **Resultados:** clasificación confirmada, referencia de solicitud, metadata, campos JSON conservados y tratamiento explícito de lista vehicular vacía.
 
@@ -37,13 +37,23 @@ La demo ANT permanece en su vista independiente existente. Solo aparece durante 
 ## Mejoras de UX
 
 - El CTA del hero y el header llevan al formulario mediante el ancla `#consulta`.
-- La secuencia de dos consultas SRI aparece en un indicador con estados actual, completo y pendiente.
+- El indicador de progreso muestra únicamente las dos etapas SRI: contribuyente y vehículo. La tarjeta ANT permanece en el catálogo como integración pendiente, fuera del progreso.
+- Un enlace de salto lleva al contenido principal; el enlace «Volver arriba» apunta al inicio real de la página.
+- Los campos obligatorios tienen semántica HTML `required`, sin retirar la validación personalizada ni `noValidate`.
 - Los errores de entrada se muestran junto al control y enfocan el primer campo que necesita corrección.
 - Tras una consulta exitosa o un error de servidor, el resultado o aviso recibe foco para facilitar el seguimiento con teclado y lector de pantalla.
 - Se conservan los valores escritos ante un error de red; empezar una consulta nueva es una acción explícita.
 - La placa se muestra en mayúsculas mediante CSS, mientras el valor transmitido conserva exactamente lo escrito por el usuario.
 - Una respuesta de vehículos `data: []` continúa indicando que no se recibió información, sin asegurar inexistencia.
 - El estado ANT incluye el enlace oficial al trámite de certificado, aclara que no es una API y no solicita identificaciones ni presenta puntos ficticios.
+
+### Interpretación de errores HTTP
+
+- Un `404` con el sobre contractual y código `NOT_FOUND` representa información no encontrada.
+- Un `404` sin un código contractual reconocido se presenta como un endpoint no disponible; no se interpreta como ausencia del contribuyente.
+- Los `400` se presentan como errores de validación y los `422` como una condición de negocio no satisfecha.
+- Los `502` y `503` indican que el proveedor no pudo atender la consulta; `504` y el timeout local muestran un mensaje específico de espera agotada.
+- Los errores de conexión y las respuestas inválidas del servidor tienen mensajes seguros. No se muestran cuerpos técnicos, URLs internas ni trazas; el `requestId` se conserva cuando está disponible.
 
 ## Fotografía y rendimiento
 
