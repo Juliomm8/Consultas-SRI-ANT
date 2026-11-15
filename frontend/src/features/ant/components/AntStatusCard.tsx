@@ -1,35 +1,37 @@
+import { PortalIcon } from '../../../shared/components/PortalIcon'
+
 export function AntStatusCard() {
   return (
-    <section className="ant-card" aria-labelledby="ant-title">
-      <div className="ant-card__icon" aria-hidden="true">!</div>
-      <div>
+    <article className="service-card service-card--ant ant-card" id="estado-ant" aria-labelledby="ant-title" tabIndex={-1}>
+      <div className="ant-card__art" aria-hidden="true">
+        <span className="service-card__number">03</span>
+        <span className="ant-card__document"><PortalIcon name="file" /><i /><i /><i /><b><PortalIcon name="shield" /></b></span>
+        <span className="ant-card__art-caption">TRÁMITE OFICIAL</span>
+      </div>
+      <div className="service-card__body ant-card__body">
+        <div className="ant-card__eyebrow">
+          <span className="ant-status-dot" />
+          <span>Integración automática pendiente</span>
+        </div>
         <div className="ant-card__heading">
-          <h2 id="ant-title">Puntos de licencia ANT</h2>
+          <h3 id="ant-title">Puntos de licencia ANT</h3>
           <span className="status-pill status-pill--pending">En revisión</span>
         </div>
         <p>
-          La consulta automática directa de puntos de licencia todavía no está integrada.
-          La ANT dispone de un trámite oficial para obtener el certificado de información del
-          conductor, que incluye los puntos de la licencia.
+          La consulta automática directa de puntos todavía no está integrada. La ANT dispone de un trámite web oficial para obtener el certificado de información del conductor.
         </p>
-        <p>
-          <a
-            className="ant-card__official-link"
-            href="https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Consultar el trámite oficial en Gob.ec <span aria-hidden="true">↗</span>
-          </a>
-        </p>
-        <p>
-          El trámite del portal es independiente de una API que esta aplicación pueda consumir.
-          La consulta automática estará disponible cuando se confirme un mecanismo de integración autorizado.
-        </p>
+        <a
+          className="text-link ant-card__official-link"
+          href="https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Consultar el trámite oficial <PortalIcon name="arrow-up-right" />
+        </a>
         <p className="ant-card__footnote">
-          Esta aplicación no consulta la ANT, no solicita datos personales para esta función y no muestra puntos simulados.
+          El trámite web no equivale a una API. Esta aplicación no consulta la ANT ni muestra puntos simulados. La integración se habilitará cuando exista un mecanismo autorizado y verificado.
         </p>
       </div>
-    </section>
+    </article>
   )
 }
