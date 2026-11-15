@@ -60,8 +60,17 @@ public class SriContribuyenteHttpAdapter implements ContribuyenteConsultaPort {
             throw SriIntegrationException.invalidResponse();
         }
 
-        // The provider's typeContribuyente values have not been verified; do not guess a mapping.
-        return Optional.of(new Contribuyente(ruc, TipoPersona.NO_DETERMINADA));
+        return Optional.of(new Contribuyente(ruc, mapTipoPersona(details)));
+    }
+
+    private static TipoPersona mapTipoPersona(JsonNode details) {
+        JsonNode taxpayerType = details.get("tipoContribuyente");
+        if (taxpayerType == null || !taxpayerType.isTextual()) {
+            return TipoPersona.NO_DETERMINADA;
+        }
+        return "PERSONA NATURAL".equals(taxpayerType.textValue())
+                ? TipoPersona.NATURAL
+                : TipoPersona.NO_DETERMINADA;
     }
 
     private static boolean matchesRequestedRuc(JsonNode details, Ruc requestedRuc) {
