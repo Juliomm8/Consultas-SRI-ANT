@@ -35,6 +35,13 @@ export class ApiRequestError extends Error {
   }
 }
 
+export interface PostJsonOptions {
+  /** Use a same-origin path for features that must remain behind a local proxy. */
+  baseUrl?: string
+  /** Safe, feature-specific messages for the API's stable error codes. */
+  safeMessages?: Readonly<Record<string, string>>
+}
+
 function apiBaseUrl(): string {
   return (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '')
 }
@@ -57,7 +64,15 @@ function fallbackMessage(status: number): string {
   return safeMessages.INTERNAL_ERROR
 }
 
-function messageForError(code: string | undefined, status: number): string {
+function messageForError(
+  code: string | undefined,
+  status: number,
+  safeOverrides?: Readonly<Record<string, string>>,
+): string {
+  if (code && safeOverrides && Object.prototype.hasOwnProperty.call(safeOverrides, code)) {
+    const override = safeOverrides[code]
+    if (typeof override === 'string') return override
+  }
   if (code && Object.prototype.hasOwnProperty.call(safeMessages, code)) {
     return safeMessages[code as keyof typeof safeMessages]
   }
@@ -75,12 +90,14 @@ async function readJson(response: Response): Promise<unknown> {
 export async function postJson<TRequest, TData>(
   path: string,
   request: TRequest,
+  options: PostJsonOptions = {},
 ): Promise<ApiSuccess<TData>> {
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
   try {
-    const response = await fetch(`${apiBaseUrl()}${path}`, {
+    const baseUrl = (options.baseUrl ?? apiBaseUrl()).replace(/\/+$/, '')
+    const response = await fetch(`${baseUrl}${path}`, {
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
@@ -95,7 +112,7 @@ export async function postJson<TRequest, TData>(
       const detail = isRecord(payload) && isRecord(payload.error) ? payload.error : undefined
       const code = typeof detail?.code === 'string' ? detail.code : undefined
       const requestId = safeRequestId(detail?.requestId) ?? requestIdFromHeader
-      const message = messageForError(code, response.status)
+      const message = messageForError(code, response.status, options.safeMessages)
       throw new ApiRequestError(message, response.status, code, requestId)
     }
 

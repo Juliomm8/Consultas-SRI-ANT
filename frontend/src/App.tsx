@@ -7,6 +7,8 @@ import { consultarVehiculos } from './features/vehiculos/api/vehiculosApi'
 import { ApiRequestError } from './shared/api/apiClient'
 import type { ApiSuccess, ContribuyenteResponse, VehiculoResponse } from './shared/api/contracts'
 import { FieldList } from './shared/components/FieldList'
+import { AntPointsDemo } from './features/ant/demo/AntPointsDemo'
+import { ANT_DEMO_AVAILABLE } from './features/ant/demo/demoAccess'
 import './App.css'
 
 interface VisibleError {
@@ -40,11 +42,13 @@ function ErrorNotice({ error }: { error: VisibleError }) {
 }
 
 function App() {
+  const antDemoAvailable = ANT_DEMO_AVAILABLE
   const [taxpayerResult, setTaxpayerResult] = useState<ApiSuccess<ContribuyenteResponse> | null>(null)
   const [vehicleResult, setVehicleResult] = useState<ApiSuccess<VehiculoResponse[]> | null>(null)
   const [taxpayerLoading, setTaxpayerLoading] = useState(false)
   const [vehicleLoading, setVehicleLoading] = useState(false)
   const [error, setError] = useState<VisibleError | null>(null)
+  const [showAntDemo, setShowAntDemo] = useState(false)
 
   async function handleTaxpayerSubmit(email: string, ruc: string) {
     setError(null)
@@ -90,6 +94,10 @@ function App() {
     setError(null)
   }
 
+  if (antDemoAvailable && showAntDemo) {
+    return <AntPointsDemo onBack={() => setShowAntDemo(false)} />
+  }
+
   return (
     <main className="portal-shell">
       <header className="portal-header">
@@ -101,6 +109,11 @@ function App() {
           </span>
         </a>
         <span className="header-caption"><span className="header-dot" /> Información consultada en línea</span>
+        {antDemoAvailable && (
+          <button className="ant-demo-launch" type="button" onClick={() => setShowAntDemo(true)}>
+            Abrir demostración ANT
+          </button>
+        )}
       </header>
 
       <section className="hero" id="inicio" aria-labelledby="page-title">

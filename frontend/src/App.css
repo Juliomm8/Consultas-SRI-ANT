@@ -28,6 +28,27 @@
   margin-bottom: 27px;
 }
 
+.ant-demo-launch {
+  padding: 9px 12px;
+  border: 1px solid #a9c1c4;
+  border-radius: 9px;
+  color: #20545e;
+  background: #fff;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ant-demo-launch:hover {
+  background: #f2f8f7;
+}
+
+.ant-demo-launch:focus-visible {
+  outline: 3px solid rgb(36 117 117 / 24%);
+  outline-offset: 2px;
+}
+
 .brand {
   gap: 12px;
   color: inherit;
