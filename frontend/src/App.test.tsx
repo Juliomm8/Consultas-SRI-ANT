@@ -60,7 +60,7 @@ describe('Portal de consultas', () => {
   it('muestra el estado ANT pendiente y el enlace oficial sin consultar servicios', () => {
     render(<App />)
 
-    expect(screen.getByRole('heading', { name: /tu información, más clara y a tu alcance/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /consulta con claridad/i })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /puntos de licencia ant/i })).toBeInTheDocument()
     expect(screen.getByText(/consulta automática directa de puntos todavía no está integrada/i)).toBeInTheDocument()
     expect(screen.getByText(/no consulta la ant ni muestra puntos simulados/i)).toBeInTheDocument()
@@ -107,6 +107,7 @@ describe('Portal de consultas', () => {
     expect(screen.getByText('ACTIVO')).toBeInTheDocument()
     expect(screen.getByText('2020-01-01')).toBeInTheDocument()
     expect(screen.queryByText('fechaCese')).not.toBeInTheDocument()
+    expect(screen.getAllByText(syntheticRuc, { exact: true })).toHaveLength(1)
     const [url, options] = fetchMock.mock.calls[0] ?? []
     expect(url).toBe('/api/v1/contribuyentes/consultas')
     expect(options?.method).toBe('POST')
@@ -219,8 +220,8 @@ describe('Portal de consultas', () => {
     await user.click(screen.getByRole('button', { name: /consultar vehículo/i }))
 
     expect(await screen.findByRole('region', { name: 'Resultado de vehículos' })).toBeInTheDocument()
-    expect(screen.getByText(`Vehículo ${syntheticPlate}`)).toBeInTheDocument()
-    expect(screen.getByText('Vehículo XYZ9876')).toBeInTheDocument()
+    expect(screen.getByText(syntheticPlate, { exact: true })).toBeInTheDocument()
+    expect(screen.getByText('XYZ9876', { exact: true })).toBeInTheDocument()
     expect(screen.getByText('Marca sintética')).toBeInTheDocument()
     expect(screen.getByText('2020')).toBeInTheDocument()
     expect(screen.getAllByText('Sí')).toHaveLength(1)
