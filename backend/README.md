@@ -2,6 +2,8 @@
 
 API Spring Boot para las consultas de contribuyentes y vehículos del SRI. Es una sola aplicación Java desplegable, organizada en módulos lógicos con arquitectura hexagonal ligera. Los adaptadores REST invocan casos de uso; estos dependen de puertos implementados por adaptadores salientes SRI.
 
+El cliente web React + TypeScript está en `../frontend` y consume únicamente la API de este backend.
+
 ## Requisitos
 
 - JDK 17.
@@ -101,4 +103,3 @@ Las pruebas de adaptadores usan `MockRestServiceServer`; las de controladores us
 - Consultar un vehículo no demuestra que pertenezca a un contribuyente.
 - No está confirmado el significado general de la respuesta SRI `data: []` para vehículos.
 - ANT no ha devuelto una respuesta funcional en el entorno de diagnóstico. Su parser, flujo de aplicación, caché Redis y fallback no están implementados.
-- El frontend todavía no está conectado a esta API.
