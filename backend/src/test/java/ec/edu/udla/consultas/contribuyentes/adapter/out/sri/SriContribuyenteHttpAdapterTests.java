@@ -49,7 +49,7 @@ class SriContribuyenteHttpAdapterTests {
         server.expect(requestTo("https://sri.test/details?ruc=" + TEST_RUC))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess("{\"numeroRuc\":\"" + TEST_RUC
-                        + "\",\"tipoContribuyente\":\"valor-no-clasificado\"}", MediaType.APPLICATION_JSON));
+                        + "\",\"tipoContribuyente\":\"UNCONFIRMED_TYPE\"}", MediaType.APPLICATION_JSON));
 
         var result = adapter.consultarPor(new Ruc(TEST_RUC));
 
@@ -57,6 +57,41 @@ class SriContribuyenteHttpAdapterTests {
         assertEquals(TEST_RUC, result.orElseThrow().ruc().value());
         assertEquals(TipoPersona.NO_DETERMINADA, result.orElseThrow().tipoPersona());
         server.verify();
+    }
+
+    @Test
+    void mapsConfirmedNaturalPersonType() {
+        server.expect(requestTo("https://sri.test/existence?numeroRuc=" + TEST_RUC))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("true", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://sri.test/details?ruc=" + TEST_RUC))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"numeroRuc\":\"" + TEST_RUC
+                        + "\",\"tipoContribuyente\":\"PERSONA NATURAL\"}", MediaType.APPLICATION_JSON));
+
+        var result = adapter.consultarPor(new Ruc(TEST_RUC));
+
+        assertTrue(result.isPresent());
+        assertEquals(TEST_RUC, result.orElseThrow().ruc().value());
+        assertEquals(TipoPersona.NATURAL, result.orElseThrow().tipoPersona());
+        server.verify();
+    }
+
+    @Test
+    void keepsPersonTypeUndeterminedWhenTheProviderPropertyIsMissing() {
+        assertUndeterminedPersonType("{\"numeroRuc\":\"" + TEST_RUC + "\"}");
+    }
+
+    @Test
+    void keepsPersonTypeUndeterminedWhenTheProviderPropertyIsNull() {
+        assertUndeterminedPersonType("{\"numeroRuc\":\"" + TEST_RUC
+                + "\",\"tipoContribuyente\":null}");
+    }
+
+    @Test
+    void keepsPersonTypeUndeterminedWhenTheProviderPropertyHasAnUnexpectedJsonType() {
+        assertUndeterminedPersonType("{\"numeroRuc\":\"" + TEST_RUC
+                + "\",\"tipoContribuyente\":{\"value\":\"PERSONA NATURAL\"}}");
     }
 
     @Test
@@ -131,6 +166,21 @@ class SriContribuyenteHttpAdapterTests {
         assertNull(exception.getCause());
         assertFalse(exception.getMessage().contains(TEST_RUC));
         assertFalse(exception.getMessage().contains("synthetic-sensitive-body"));
+        server.verify();
+    }
+
+    private void assertUndeterminedPersonType(String detailsResponse) {
+        server.expect(requestTo("https://sri.test/existence?numeroRuc=" + TEST_RUC))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("true", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://sri.test/details?ruc=" + TEST_RUC))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(detailsResponse, MediaType.APPLICATION_JSON));
+
+        var result = adapter.consultarPor(new Ruc(TEST_RUC));
+
+        assertTrue(result.isPresent());
+        assertEquals(TipoPersona.NO_DETERMINADA, result.orElseThrow().tipoPersona());
         server.verify();
     }
 
