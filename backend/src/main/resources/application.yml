@@ -2,8 +2,23 @@ spring:
   application:
     name: consultas-sri-ant-backend
 
+app:
+  cache:
+    redis:
+      enabled: ${REDIS_CACHE_ENABLED:false}
+      host: ${REDIS_HOST:}
+      port: ${REDIS_PORT:6379}
+      username: ${REDIS_USERNAME:}
+      password: ${REDIS_PASSWORD:}
+      ssl-enabled: ${REDIS_SSL_ENABLED:false}
+      hmac-secret: ${REDIS_CACHE_HMAC_SECRET:}
+      ttl: ${REDIS_CACHE_TTL:}
+
 integrations:
   sri:
+    taxpayer-existence-url: https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/ConsolidadoContribuyente/existePorNumeroRuc
+    taxpayer-details-url: https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/ConsolidadoContribuyente/obtenerPorNumerosRuc
+    vehicle-url: https://srienlinea.sri.gob.ec/sri-matriculacion-vehicular-recaudacion-servicio-internet/rest/BaseVehiculo/obtenerPorNumeroPlacaOPorNumeroCampvOPorNumeroCpn
     http:
       connect-timeout: 3s
       read-timeout: 5s
@@ -19,6 +34,8 @@ resilience4j:
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 2
         automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - ec.edu.udla.consultas.puntos.application.exception.PuntosLicenciaProviderException
 
 management:
   endpoints:

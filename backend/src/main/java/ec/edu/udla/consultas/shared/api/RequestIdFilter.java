@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import ec.edu.udla.consultas.shared.correlation.RequestCorrelationContext;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,7 +26,16 @@ public class RequestIdFilter extends OncePerRequestFilter {
         String requestId = UUID.randomUUID().toString();
         request.setAttribute(REQUEST_ID_ATTRIBUTE, requestId);
         response.setHeader(HEADER_NAME, requestId);
-
-        filterChain.doFilter(request, response);
+        String previousRequestId = MDC.get(RequestCorrelationContext.REQUEST_ID_MDC_KEY);
+        MDC.put(RequestCorrelationContext.REQUEST_ID_MDC_KEY, requestId);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            if (previousRequestId == null) {
+                MDC.remove(RequestCorrelationContext.REQUEST_ID_MDC_KEY);
+            } else {
+                MDC.put(RequestCorrelationContext.REQUEST_ID_MDC_KEY, previousRequestId);
+            }
+        }
     }
 }
