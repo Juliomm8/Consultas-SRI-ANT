@@ -7,7 +7,7 @@ if (!baseURL) {
 
 export default defineConfig({
   testDir: '.',
-  testMatch: '**/*.spec.ts',
+  testMatch: '**/consultations.spec.ts',
   fullyParallel: false,
   workers: 1,
   retries: 0,

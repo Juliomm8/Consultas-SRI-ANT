@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "test": "vitest run",
     "test:e2e": "node ./e2e/run.mjs",
+    "test:e2e:ant": "node ./e2e/ant-demo.run.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -277,6 +277,7 @@ try {
       ...process.env,
       VITE_API_BASE_URL: '/api/v1',
       VITE_API_PROXY_TARGET: backendBase,
+      VITE_ANT_DEMO: 'false',
       VITE_E2E: 'true',
     },
   })
