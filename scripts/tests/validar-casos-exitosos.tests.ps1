@@ -82,6 +82,8 @@ $unsafeValues = @(
     'SYNTHETIC@EXAMPLE.TEST',
     'https://example.test/type',
     'BEARER-SYNTHETIC-TOKEN',
+    'bearer-synthetic-token',
+    'access_token-synthetic',
     "PERSONA`nNATURAL",
     ('A' * 65),
     '',

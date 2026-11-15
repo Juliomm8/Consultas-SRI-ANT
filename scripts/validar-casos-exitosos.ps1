@@ -126,8 +126,8 @@ function Get-SafeTaxpayerTypeValue {
     if ($Value -match '[\p{Cc}\p{Cf}]') { return $null }
     $candidate = $Value.Trim()
     if ($candidate.Length -gt 64) { return $null }
-    if ($candidate -cmatch '^(?:HTTPS?|FTP|WWW)(?:$|[ .:/_-])') { return $null }
-    if ($candidate -cmatch '^(?:BEARER|TOKEN|ACCESS[_ -]?TOKEN|REFRESH[_ -]?TOKEN|API[_ -]?KEY|SECRET|JWT|SESSION)(?:$|[ _-])') {
+    if ($candidate -match '^(?:HTTPS?|FTP|WWW)(?:$|[ .:/_-])') { return $null }
+    if ($candidate -match '^(?:BEARER|TOKEN|ACCESS[_ -]?TOKEN|REFRESH[_ -]?TOKEN|API[_ -]?KEY|SECRET|JWT|SESSION)(?:$|[ _-])') {
         return $null
     }
     if ($candidate -match '^[\p{L}]{32,}$') { return $null }
