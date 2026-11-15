@@ -46,11 +46,27 @@ Este modo solicita únicamente un RUC mediante `Read-Host -AsSecureString`, cons
 
 El registro de la ejecución anterior indicó `ps_placa` vacío incluso después de la autorización del usuario. Por tanto, no se puede afirmar que la placa se enviara en aquella ronda. Se corrigió `scripts/validar-casos-exitosos.ps1`: ahora una respuesta afirmativa construye y envía una segunda consulta con la placa codificada; una respuesta negativa omite esa consulta y conserva solo la prueba inicial con `ps_placa` vacío. Cada solicitud ANT permite como máximo un único reintento, diez segundos después, solo ante HTTP 502, 503 o 504. Esta corrección se probó sin ejecutar solicitudes HTTP.
 
+## Nueva inspección del flujo web oficial de ANT
+
+Se inspeccionaron secuencialmente, mediante GET y sin parámetros personales, el portal inicial, la página de criterios y la vista de puntos. La inspección de cabeceras se ejecutó el **2026-11-14 a las 21:01:25 -05:00** (PowerShell 7.6.9). Se usó una `CookieContainer` limitada al host oficial y solo en memoria; no se enviaron credenciales. La inspección estructural del cuerpo se realizó en una ejecución anterior del mismo día; su hora exacta no quedó registrada. No se guardaron cuerpos ni valores de cookies.
+
+| Ruta | HTTP | Content-Type | Tiempo | Redirecciones | Set-Cookie / cookies en jar | WWW-Authenticate | Retry-After |
+|---|---:|---|---:|---:|---|---|---|
+| `/PortalWEB/` | 502 | `text/html` | 376 ms | Ninguna | No / 0 | No | No observado |
+| `/PortalWEB/paginas/clientes/clp_criterio_consulta.jsp` | 502 | `text/html` | 79 ms | Ninguna | No / 0 | No | No observado |
+| `/PortalWEB/paginas/clientes/clp_grid_puntos.jsp` | 502 | `text/html` | 79 ms | Ninguna | No / 0 | No | No observado |
+
+Las páginas examinadas mostraron el título genérico `502 Bad Gateway`, sin formularios ni tablas. No se identificaron nombres de campos, campos ocultos, encabezados de tabla ni indicadores útiles en esas respuestas. No se observó una redirección, requisito de autenticación en cabecera ni cookie de sesión; al ser respuestas de gateway, esto **no demuestra** que el portal funcional prescinda de sesión, formularios, JavaScript, iframe, CAPTCHA o autenticación. Tampoco se confirmó cómo se llega a la vista de puntos ni qué parámetros requiere.
+
+Se añadió `-SoloANT` al diagnóstico. Primero inspecciona el portal y las rutas de referencia con una cookie jar efímera; solicita una cédula mediante `Read-Host -AsSecureString` únicamente si la página de criterios entrega un único formulario GET compatible con la ruta y los campos conocidos, sin campos ocultos, query en el `action`, scripts, AJAX, iframe, CAPTCHA ni autenticación. En tal caso prueba primero `ps_placa` vacío y pregunta antes de solicitar una placa privada para una segunda variante. Los valores y las URLs completas con parámetros no se muestran ni se escriben. Si el portal inicial o el formulario no se pueden confirmar, termina sin solicitar ni enviar identificaciones. En esta ronda no se ingresaron cédulas ni placas y no se ejecutaron consultas con datos personales.
+
+El modo conserva un único reintento diez segundos después solo para HTTP 502, 503 o 504 en cada consulta de ANT; no reintenta la navegación de descubrimiento. Ninguna respuesta de gateway se interpreta como puntos ni como resultado funcional. No se implementó un adaptador Java ni parser ANT: la forma de consulta y la respuesta de puntos todavía no tienen evidencia suficiente.
+
 ## Interpretación actual de las integraciones
 
 - **Contribuyentes SRI:** la existencia se interpreta únicamente desde el booleano JSON. `false` es ausencia confirmada y evita la segunda llamada. `true` habilita la lectura de detalles. El valor exacto `tipoContribuyente: "PERSONA NATURAL"` se clasifica como `TipoPersona.NATURAL`; valores desconocidos, propiedad ausente o nula, y tipos JSON no textuales quedan `NO_DETERMINADA`. No se implementa equivalencia para personas jurídicas. HTTP 204, un cuerpo no booleano, JSON ilegible, RUC de respuesta ausente o distinto y errores HTTP son fallos técnicos, no ausencia.
 - **Vehículos SRI:** la respuesta positiva observada contiene el vehículo directamente en el objeto raíz. El adaptador la convierte en una lista de un elemento, como exige el puerto actual, y conserva solo los campos permitidos listados arriba. También admite el envoltorio con `data` como compatibilidad: `data: []` produce una lista vacía, pero su semántica más allá del centinela no está confirmada; el arreglo no vacío se conserva como variante no verificada. JSON mal formado, campos obligatorios ausentes (`codigoVehiculo`) o formas desconocidas son errores de respuesta. Consultar una placa no prueba titularidad.
-- **ANT:** el 502 sigue siendo una falla de gateway/upstream. La página funcional, la extracción de puntos, la necesidad de cookies o sesión, los campos, los selectores y el cálculo de puntos continúan sin verificar. No se almacena una página de error como resultado válido.
+- **ANT:** las tres rutas de navegación investigadas devuelven 502, y la consulta directa ya había devuelto 502 en dos intentos consecutivos. Esto confirma una falla de gateway/upstream desde este entorno, no que el servicio esté roto. La página funcional, la extracción de puntos, la necesidad de cookies o sesión, los campos, los selectores y el cálculo de puntos continúan sin verificar. No se almacena una página de error como resultado válido.
 
 Los adaptadores SRI usan HTTP GET y timeouts configurados de 3 segundos para conexión y 5 segundos para lectura. Los errores de red, timeout, HTTP y contenido inválido se representan con excepciones técnicas sanitizadas: no conservan causas HTTP que puedan incluir URL o cuerpos.
 

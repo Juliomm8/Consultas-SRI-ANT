@@ -43,7 +43,7 @@ Entrada:
 
 El backend valida la placa e invoca el adaptador SRI. Un objeto de vehículo devuelto en la raíz se representa como un elemento de `data`; la variante compatible `data: [...]` también se conserva. Una lista vacía se devuelve como HTTP 200 con `data: []`: la semántica general de la respuesta negativa del proveedor no está confirmada. Una consulta por placa no implica ni verifica titularidad.
 
-### Consultar puntos de licencia
+### Consultar puntos de licencia — propuesta
 
 `POST /api/v1/licencias/puntos/consultas`
 
@@ -55,7 +55,7 @@ Entrada:
 }
 ```
 
-El comportamiento futuro verificará que el RUC corresponda a una persona natural, obtendrá su cédula solo mediante una regla confirmada y consultará ANT. No se acepta una cédula arbitraria enviada por el navegador.
+El comportamiento futuro verificará que el RUC corresponda a una persona natural, obtendrá su cédula solo mediante una regla confirmada y consultará ANT. No se acepta una cédula arbitraria enviada por el navegador. No hay controlador REST funcional para esta operación. El diagnóstico actual recibió HTTP 502 en el portal, el formulario de criterios y la vista de puntos; el flujo, los parámetros reales y el formato de respuesta no están confirmados. La ruta no promete ni devuelve puntos hasta obtener evidencia funcional.
 
 ## Respuestas exitosas
 
