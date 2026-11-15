@@ -5,7 +5,9 @@ param(
     [int]$TimeoutSeconds = 20,
 
     [ValidateRange(1024, 262144)]
-    [int]$MaxBodyCharacters = 65536
+    [int]$MaxBodyCharacters = 65536,
+
+    [switch]$SoloTipoContribuyente
 )
 
 $minimumPowerShellVersion = [version]'7.2'
@@ -121,9 +123,15 @@ function Get-SafeTaxpayerTypeValue {
     param([AllowNull()][AllowEmptyString()][string]$Value)
 
     if ([string]::IsNullOrWhiteSpace($Value)) { return $null }
+    if ($Value -match '[\p{Cc}\p{Cf}]') { return $null }
     $candidate = $Value.Trim()
-    if ($candidate.Length -gt 32 -or $candidate -cnotmatch '^\p{Lu}[\p{Lu}_-]{0,31}$') { return $null }
-    if ($candidate -cmatch '^(?:HTTP|HTTPS|FTP|WWW)(?:$|[_-])') { return $null }
+    if ($candidate.Length -gt 64) { return $null }
+    if ($candidate -cmatch '^(?:HTTPS?|FTP|WWW)(?:$|[ .:/_-])') { return $null }
+    if ($candidate -cmatch '^(?:BEARER|TOKEN|ACCESS[_ -]?TOKEN|REFRESH[_ -]?TOKEN|API[_ -]?KEY|SECRET|JWT|SESSION)(?:$|[ _-])') {
+        return $null
+    }
+    if ($candidate -match '^[\p{L}]{32,}$') { return $null }
+    if ($candidate -cnotmatch '^[\p{L}][\p{L}\p{M}]*(?:[ _-][\p{L}][\p{L}\p{M}]*)*$') { return $null }
     return $candidate
 }
 
@@ -170,6 +178,59 @@ function Show-AuthorizedTaxpayerType {
         Write-Host "tipoContribuyente (valor categórico): $safeValue"
     }
     $safeValue = $null
+}
+
+function Invoke-TaxpayerTypeOnly {
+    $ruc = $null
+    $existenceResult = $null
+    $taxpayerResult = $null
+    $consent = $null
+    $authorized = $false
+    try {
+        Write-Host 'Modo exclusivo de tipoContribuyente. El RUC se solicitará como SecureString y no se mostrará ni guardará.'
+        $ruc = Read-PrivateValue -Prompt 'RUC propio o autorizado (13 dígitos ASCII)' -Pattern '^[0-9]{13}$'
+        if ($null -eq $ruc) {
+            Write-Host 'Formato de RUC no válido; no se consultó ningún servicio.'
+            return
+        }
+
+        $existenceUrl = 'https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/ConsolidadoContribuyente/existePorNumeroRuc'
+        $existenceResult = Invoke-EndpointGet -Service 'SRI — existencia del RUC' -BaseUrl $existenceUrl -Parameters ([ordered]@{ numeroRuc = $ruc }) -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
+        if ($existenceResult.StatusCode -eq 200 -and $existenceResult.HasBoolean -and -not $existenceResult.BooleanValue) {
+            Write-Host 'El SRI devolvió false; no se consultaron detalles.'
+            return
+        }
+        if ($existenceResult.StatusCode -ne 200 -or -not $existenceResult.HasBoolean -or -not $existenceResult.BooleanValue) {
+            Write-Host 'No se obtuvo una confirmación válida de existencia; no se consultaron detalles.'
+            return
+        }
+
+        $taxpayerUrl = 'https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/ConsolidadoContribuyente/obtenerPorNumerosRuc'
+        $taxpayerResult = Invoke-EndpointGet -Service 'SRI — información del contribuyente' -BaseUrl $taxpayerUrl -Parameters ([ordered]@{ ruc = $ruc }) -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters -CaptureTaxpayerType
+        if (-not $taxpayerResult.TaxpayerTypeInspectionAvailable -or
+            $null -eq $taxpayerResult.SafeTaxpayerTypeValue) {
+            Write-Host 'No se obtuvo un valor categórico seguro de tipoContribuyente; no se mostró información.'
+            return
+        }
+
+        $consent = Read-Host '¿Autoriza mostrar únicamente el valor categórico seguro de tipoContribuyente? Escriba S para autorizar o N para omitir'
+        $authorized = $consent -match '^(?i:s|si|sí)$'
+        $consent = $null
+        if ($authorized) {
+            Show-AuthorizedTaxpayerType -Value $taxpayerResult.SafeTaxpayerTypeValue -Authorized $true
+        }
+        else {
+            Write-Host 'No se mostró el valor categórico.'
+        }
+    }
+    finally {
+        $ruc = $null
+        $existenceResult = $null
+        if ($null -ne $taxpayerResult) { $taxpayerResult.SafeTaxpayerTypeValue = $null }
+        $taxpayerResult = $null
+        $consent = $null
+        $authorized = $false
+    }
 }
 
 function Get-HtmlAttribute {
@@ -896,7 +957,12 @@ function Invoke-PrivateDiagnostics {
 }
 
 try {
-    Invoke-PrivateDiagnostics
+    if ($SoloTipoContribuyente) {
+        Invoke-TaxpayerTypeOnly
+    }
+    else {
+        Invoke-PrivateDiagnostics
+    }
 }
 catch {
     Write-Host 'Diagnóstico interrumpido por un error local; se omite el detalle para proteger los identificadores.'
