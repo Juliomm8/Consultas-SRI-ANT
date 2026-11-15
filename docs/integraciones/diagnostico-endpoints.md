@@ -1,5 +1,78 @@
 # Diagnóstico técnico de endpoints SRI y ANT
 
+## Estado de la integración ANT
+
+La integración de puntos de licencia sigue bloqueada por respuestas HTTP 502
+Bad Gateway del portal oficial. Esta respuesta confirma un fallo de gateway en
+las rutas probadas desde el entorno de diagnóstico; no permite asegurar cuál es
+la causa interna del proveedor ni concluir que el servicio esté permanentemente
+fuera de servicio.
+
+Las rutas en las que se observaron respuestas 502 son:
+
+- `https://consultaweb.ant.gob.ec/PortalWEB/`
+- `https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_criterio_consulta.jsp`
+- `https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_grid_puntos.jsp`
+- `https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_grid_citaciones.jsp`
+
+En las inspecciones disponibles no se obtuvieron formularios ni tablas
+funcionales. Las consultas de las páginas de entrada, criterios y puntos se
+probaron sin enviar identificaciones personales en el diagnóstico más reciente.
+También existieron intentos anteriores de consulta directa con respuestas 502.
+
+Las dos comprobaciones posteriores del portal principal reportadas el
+**14 de noviembre de 2026** volvieron a recibir HTTP 502:
+
+| Hora local (UTC-05:00) | Resultado |
+|---|---|
+| 21:16:18 | HTTP 502 Bad Gateway |
+| 21:18:15 | HTTP 502 Bad Gateway |
+
+Estas dos marcas corresponden a las ejecuciones reportadas para este proyecto;
+las mediciones detalladas de tiempos y encabezados registradas más abajo
+pertenecen a las ejecuciones previas indicadas allí.
+
+### Trabajo realizado
+
+La investigación se realizó de forma incremental:
+
+1. Se probó directamente el endpoint indicado por la actividad.
+2. Se comprobaron los códigos HTTP y la estructura de las respuestas recibidas.
+3. Se crearon scripts reproducibles que resumen las respuestas sin guardar los
+   cuerpos ni imprimir identificaciones.
+4. Se incorporó el modo aislado `-SoloANT` para no ejecutar consultas SRI que
+   no son necesarias para diagnosticar ANT.
+5. Se investigaron el portal principal y las páginas relacionadas de criterios,
+   puntos y citaciones.
+6. El diagnóstico incorporó inspección estructural de formularios, cookies en
+   memoria, redirecciones, HTML y nombres de campos ocultos, sin imprimir sus
+   valores.
+7. Se repitieron las comprobaciones para determinar si el error podía ser
+   transitorio.
+8. Las respuestas siguieron siendo HTTP 502; no apareció una página funcional
+   que permitiera verificar el flujo.
+
+El trabajo no se abandonó: estas pruebas buscaron distinguir un problema en
+nuestra forma de consulta de la disponibilidad observada en el gateway externo.
+El material obtenido no permite atribuir con certeza la causa interna.
+
+### Estado técnico actual
+
+- No hay una respuesta funcional de puntos ANT verificada.
+- No se confirmó el formulario real ni sus parámetros definitivos.
+- No se implementó un parser de respuestas ANT.
+- El circuito `antPoints` está configurado, pero todavía no protege una llamada
+  real al proveedor.
+- Redis y el fallback ANT siguen pendientes.
+- Una respuesta 502, HTML de error o cuerpo vacío no se almacenará como resultado
+  válido.
+- La aplicación no inventará puntos ni devolverá cero puntos cuando el
+  proveedor no responda.
+
+La automatización de la integración debe esperar a una respuesta funcional y a
+la confirmación del flujo legítimo del portal. Mientras tanto, el frontend y la
+documentación informan la limitación sin simular resultados.
+
 ## Alcance y método
 
 Se ejecutó `scripts/diagnostico-endpoints.ps1` en PowerShell 7.6.9 el **2026-11-14 a las 12:49:37 -05:00** (America/Guayaquil). Las cuatro solicitudes fueron GET y secuenciales, con timeout de 20 segundos, seguimiento explícito de hasta cinco redirecciones y un máximo analizado de 65.536 caracteres por respuesta. No hubo redirecciones. No se enviaron cookies, credenciales ni encabezados de autenticación. Los cuerpos no se escribieron en disco y el script solo muestra su estructura; los valores de los parámetros de diagnóstico no se imprimen.

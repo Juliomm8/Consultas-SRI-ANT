@@ -23,20 +23,21 @@ y puntos de licencia de la ANT mediante una aplicación web.
 Cliente-servidor con un backend Java modular y arquitectura
 hexagonal ligera basada en puertos y adaptadores.
 
-El backend incluye:
-- API REST y validación
-- Casos de uso
-- Adaptadores SRI
-- Adaptador ANT
-- Servicio de puntos resiliente
-- Adaptador Redis
+El backend expone consultas REST de contribuyentes y vehículos del SRI. El
+frontend React se comunica únicamente con ese backend.
 
 ## Estado del proyecto
 
-En desarrollo.
+Las consultas de contribuyentes y vehículos SRI están implementadas. La
+integración de puntos de licencia ANT continúa pendiente: durante las pruebas
+el portal oficial respondió HTTP 502 Bad Gateway y no se obtuvo una respuesta
+funcional que permita definir un adaptador seguro. Resilience4j tiene una
+configuración preparada, pero aún no protege una llamada ANT real; Redis y el
+fallback también siguen pendientes. No se presentan puntos simulados ni se
+interpreta una caída del proveedor como cero puntos.
 
-Las integraciones externas todavía requieren verificación
-técnica y pruebas funcionales.
+El diagnóstico técnico, la cronología de pruebas y sus limitaciones están en
+[Estado de la integración ANT](docs/integraciones/diagnostico-endpoints.md#estado-de-la-integración-ant).
 
 ## Estructura prevista
 
