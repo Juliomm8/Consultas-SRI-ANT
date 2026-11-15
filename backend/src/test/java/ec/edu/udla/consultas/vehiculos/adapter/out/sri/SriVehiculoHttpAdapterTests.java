@@ -14,6 +14,8 @@ import org.springframework.web.client.RestClient;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -53,13 +55,26 @@ class SriVehiculoHttpAdapterTests {
                           "codigoVehiculo": 123,
                           "numeroPlaca": "VEHICLE123",
                           "numeroCamvCpn": null,
+                          "colorVehiculo1": "WHITE_SYNTHETIC",
+                          "colorVehiculo2": null,
+                          "cilindraje": 1600,
+                          "nombreClase": "CLASS_SYNTHETIC",
                           "descripcionMarca": "SYNTHETIC_BRAND",
                           "descripcionModelo": "SYNTHETIC_MODEL",
                           "anioAuto": 2020,
-                          "descripcionPais": null,
+                          "descripcionPais": "COUNTRY_SYNTHETIC",
+                          "mensajeMotivoAuto": null,
+                          "aplicaCuota": false,
+                          "fechaUltimaMatricula": "2024-01-02",
+                          "fechaCaducidadMatricula": null,
+                          "fechaCompraRegistro": "2020-02-03",
+                          "fechaRevision": null,
+                          "descripcionCanton": "CANTON_SYNTHETIC",
+                          "descripcionServicio": "SERVICE_SYNTHETIC",
                           "ultimoAnioPagado": 2024,
                           "estadoExoneracion": null,
-                          "aplicaCuota": false,
+                          "prohibidoEnajenar": false,
+                          "observacion": null,
                           "verMensajeElectricos": true,
                           "unobservedField": "not-mapped"
                         }
@@ -69,14 +84,44 @@ class SriVehiculoHttpAdapterTests {
 
         assertEquals(1, result.size());
         var attributes = result.get(0).atributos();
-        assertEquals(new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NUMERO, "123"),
-                attributes.get("codigoVehiculo"));
-        assertEquals(new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NULO, null),
-                attributes.get("numeroCamvCpn"));
-        assertEquals(new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.BOOLEANO, "false"),
-                attributes.get("aplicaCuota"));
+        Map<String, ValorCampoVehiculo> expected = Map.ofEntries(
+                Map.entry("codigoVehiculo", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NUMERO, "123")),
+                Map.entry("numeroPlaca", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "VEHICLE123")),
+                Map.entry("numeroCamvCpn", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NULO, null)),
+                Map.entry("colorVehiculo1", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "WHITE_SYNTHETIC")),
+                Map.entry("colorVehiculo2", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NULO, null)),
+                Map.entry("cilindraje", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NUMERO, "1600")),
+                Map.entry("nombreClase", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "CLASS_SYNTHETIC")),
+                Map.entry("descripcionMarca", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "SYNTHETIC_BRAND")),
+                Map.entry("descripcionModelo", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "SYNTHETIC_MODEL")),
+                Map.entry("anioAuto", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NUMERO, "2020")),
+                Map.entry("descripcionPais", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "COUNTRY_SYNTHETIC")),
+                Map.entry("mensajeMotivoAuto", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NULO, null)),
+                Map.entry("aplicaCuota", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.BOOLEANO, "false")),
+                Map.entry("fechaUltimaMatricula", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "2024-01-02")),
+                Map.entry("fechaCaducidadMatricula", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NULO, null)),
+                Map.entry("fechaCompraRegistro", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "2020-02-03")),
+                Map.entry("fechaRevision", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NULO, null)),
+                Map.entry("descripcionCanton", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "CANTON_SYNTHETIC")),
+                Map.entry("descripcionServicio", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "SERVICE_SYNTHETIC")),
+                Map.entry("ultimoAnioPagado", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NUMERO, "2024")),
+                Map.entry("prohibidoEnajenar", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.BOOLEANO, "false")),
+                Map.entry("observacion", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NULO, null)),
+                Map.entry("estadoExoneracion", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.NULO, null)),
+                Map.entry("verMensajeElectricos", new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.BOOLEANO, "true")));
+        assertEquals(Set.of("codigoVehiculo", "numeroPlaca", "numeroCamvCpn", "colorVehiculo1", "colorVehiculo2",
+                "cilindraje", "nombreClase", "descripcionMarca", "descripcionModelo", "anioAuto", "descripcionPais",
+                "mensajeMotivoAuto", "aplicaCuota", "fechaUltimaMatricula", "fechaCaducidadMatricula",
+                "fechaCompraRegistro", "fechaRevision", "descripcionCanton", "descripcionServicio", "ultimoAnioPagado",
+                "prohibidoEnajenar", "observacion", "estadoExoneracion", "verMensajeElectricos"),
+                Vehiculo.CAMPOS_SRI_OBSERVADOS);
+        assertEquals(expected.keySet(), attributes.keySet());
+        assertEquals(expected, attributes);
         assertFalse(attributes.containsKey("unobservedField"));
         assertFalse(result.get(0).toString().contains("VEHICLE123"));
+        assertThrows(UnsupportedOperationException.class, () -> result.add(result.get(0)));
+        assertThrows(UnsupportedOperationException.class, () -> attributes.put("unobservedField",
+                new ValorCampoVehiculo(ValorCampoVehiculo.TipoDato.TEXTO, "synthetic")));
         server.verify();
     }
 
