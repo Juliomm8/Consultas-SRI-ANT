@@ -815,6 +815,18 @@
   line-height: 1.55;
 }
 
+.ant-card__official-link {
+  color: #286b65;
+  font-weight: 700;
+  text-underline-offset: 2px;
+}
+
+.ant-card__official-link:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #286b65;
+  outline-offset: 3px;
+}
+
 .ant-card .ant-card__footnote {
   margin-top: 9px;
   color: #9b8b73;

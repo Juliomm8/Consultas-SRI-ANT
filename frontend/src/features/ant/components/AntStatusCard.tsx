@@ -8,11 +8,27 @@ export function AntStatusCard() {
           <span className="status-pill status-pill--pending">En revisión</span>
         </div>
         <p>
-          La consulta de puntos de licencia de la ANT no está disponible en esta versión.
-          Durante las pruebas de integración, el portal oficial ha respondido HTTP 502 Bad Gateway.
-          Estamos documentando y trabajando en la integración.
+          La consulta automática directa de puntos de licencia todavía no está integrada.
+          La ANT dispone de un trámite oficial para obtener el certificado de información del
+          conductor, que incluye los puntos de la licencia.
         </p>
-        <p className="ant-card__footnote">No se muestran resultados simulados ni se realizan llamadas desde el navegador.</p>
+        <p>
+          <a
+            className="ant-card__official-link"
+            href="https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Consultar el trámite oficial en Gob.ec <span aria-hidden="true">↗</span>
+          </a>
+        </p>
+        <p>
+          El trámite del portal es independiente de una API que esta aplicación pueda consumir.
+          La consulta automática estará disponible cuando se confirme un mecanismo de integración autorizado.
+        </p>
+        <p className="ant-card__footnote">
+          Esta aplicación no consulta la ANT, no solicita datos personales para esta función y no muestra puntos simulados.
+        </p>
       </div>
     </section>
   )

@@ -57,12 +57,20 @@ afterEach(() => {
 })
 
 describe('Portal de consultas', () => {
-  it('renderiza el portal y el aviso ANT sin llamar servicios externos', () => {
+  it('muestra el estado ANT pendiente y el enlace oficial sin consultar servicios', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { name: /información clara para tus trámites/i })).toBeInTheDocument()
-    expect(screen.getByText(/la consulta de puntos de licencia de la ANT no está disponible/i)).toBeInTheDocument()
+    expect(screen.getByText(/la consulta automática directa de puntos de licencia todavía no está integrada/i)).toBeInTheDocument()
+    expect(screen.getByText(/mecanismo de integración autorizado/i)).toBeInTheDocument()
+    expect(screen.getByText(/no solicita datos personales para esta función y no muestra puntos simulados/i)).toBeInTheDocument()
+    const officialLink = screen.getByRole('link', { name: /consultar el trámite oficial en gob\.ec/i })
+    expect(officialLink).toHaveAttribute('href', 'https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor')
+    expect(officialLink).toHaveAttribute('target', '_blank')
+    expect(officialLink).toHaveAttribute('rel', 'noopener noreferrer')
     expect(screen.getByRole('navigation', { name: 'Etapas de consulta' })).toBeInTheDocument()
+    expect(screen.queryByLabelText(/cédula|pasaporte|identificación/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/resultado de puntos/i)).not.toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
@@ -299,7 +307,7 @@ describe('Portal de consultas', () => {
   it('usa solo las rutas del backend y nunca solicita identificación para ANT', async () => {
     render(<App />)
 
-    expect(screen.getByText(/puntos de licencia de la ANT no está disponible/i)).toBeInTheDocument()
+    expect(screen.getByText(/la consulta automática directa de puntos de licencia todavía no está integrada/i)).toBeInTheDocument()
     expect(screen.queryByLabelText(/cédula/i)).not.toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
   })
