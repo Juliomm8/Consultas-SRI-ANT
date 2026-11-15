@@ -41,12 +41,17 @@ que es un flujo web para usuarios y no equivale por sí mismo a una API que esta
 aplicación pueda consumir. El backend ahora define un contrato normalizado para
 el total de puntos y permite probarlo con un simulador exclusivo del perfil
 `local-simulation`, enlazado a `127.0.0.1`. Su fuente se identifica como
-`SIMULATED`; no representa una consulta oficial y el frontend no lo consume. El
-circuit breaker protege únicamente ese límite simulado. La consulta ANT real
-sigue pendiente. Redis conserva solo resultados de fuente `ANT`; el caso de uso
+`SIMULATED`; no representa una consulta oficial. La interfaz normal conserva
+su tarjeta informativa; existe además una vista de demostración opt-in solo en
+Vite de desarrollo, protegida por `VITE_ANT_DEMO=true` y conectada al backend
+local. El circuit breaker protege únicamente el límite simulado. La consulta
+ANT real sigue pendiente. Redis conserva solo resultados de fuente `ANT`; el caso de uso
 ya contempla el fallback a un resultado cacheado, pero no hay una integración
 ANT real que pueda producir o validar esos resultados en esta versión. Ver
 [modo de simulación y configuración Redis del backend](backend/README.md#simulación-local-de-puntos-ant).
+
+La vista, los escenarios y las evidencias reproducibles de la demo local están
+documentados en [Demo local de puntos ANT](docs/pruebas/demo-ant-local.md).
 
 El diagnóstico técnico, la cronología de pruebas y sus limitaciones están en
 [Estado de la integración ANT](docs/integraciones/diagnostico-endpoints.md#estado-de-la-integración-ant).

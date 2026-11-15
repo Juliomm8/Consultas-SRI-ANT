@@ -91,13 +91,23 @@ demuestran una respuesta exitosa del proveedor.
 ### ANT
 
 La consulta automática directa de puntos ANT todavía no está integrada. La
-interfaz enlaza al [trámite oficial de información del conductor en Gob.ec](https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor),
+interfaz normal enlaza al [trámite oficial de información del conductor en Gob.ec](https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor),
 que es un flujo web oficial y no una API de consulta automática documentada
-para esta aplicación. No hay formulario ni llamada del navegador a ANT, no se
-solicitan datos para esta función y no se muestran puntos simulados. La consulta
-automática se habilitará cuando se confirme un mecanismo autorizado. El estado
-técnico está descrito en
+para esta aplicación. En el flujo normal no hay formulario ni llamada del
+navegador a ANT. La consulta automática se habilitará cuando se confirme un
+mecanismo autorizado. El estado técnico está descrito en
 [`docs/integraciones/diagnostico-endpoints.md`](../docs/integraciones/diagnostico-endpoints.md#estado-de-la-integración-ant).
+
+### Demostración local opt-in
+
+Existe una vista independiente para probar los estados del backend simulado.
+No se incluye en el build de producción y solo aparece en modo desarrollo con
+`VITE_ANT_DEMO=true`. La vista acepta únicamente el fixture sintético fijo
+`0000000000`, llama al endpoint local protegido por el perfil backend
+`local-simulation`, y siempre muestra que el resultado es `SIMULATED` y no
+oficial. No se conecta a ANT ni muestra datos de caché simulados. Consulta
+[`docs/pruebas/demo-ant-local.md`](../docs/pruebas/demo-ant-local.md) para los
+comandos, escenarios y evidencia Playwright.
 
 ## Datos y privacidad
 
@@ -140,6 +150,7 @@ Ejecuta la prueba integral desde `frontend/`:
 
 ```powershell
 npm run test:e2e
+npm run test:e2e:ant
 ```
 
 El comando empaqueta y arranca el JAR real de Spring Boot, inicia Vite y un
@@ -156,3 +167,6 @@ No verifica disponibilidad real del SRI y no envía solicitudes a SRI o ANT.
 Sus identificaciones, correo y placa son fixtures sintéticos de prueba.
 El alcance y los resultados ejecutados están en
 [`docs/pruebas/e2e-sri-frontend-backend.md`](../docs/pruebas/e2e-sri-frontend-backend.md).
+La prueba E2E de la simulación de puntos se ejecuta por separado con
+`npm run test:e2e:ant`; su aislamiento y evidencia están documentados en
+[`docs/pruebas/demo-ant-local.md`](../docs/pruebas/demo-ant-local.md).
