@@ -88,6 +88,16 @@ no demuestra titularidad.
 Los valores anteriores son ejemplos sintéticos; no son consultas reales ni
 demuestran una respuesta exitosa del proveedor.
 
+## Interfaz y recursos visuales
+
+La portada y el flujo de consulta están documentados en
+[`docs/diseno/rediseño-ui-ux.md`](../docs/diseno/rediseño-ui-ux.md). Las
+fotografías se sirven desde `public/images/` en WebP; su fuente, autor y
+licencia están registrados en
+[`docs/diseno/recursos-visuales.md`](../docs/diseno/recursos-visuales.md).
+Las capturas de referencia y las generadas con fixtures Playwright están en
+[`docs/diseno/evidencias-ui/`](../docs/diseno/evidencias-ui/).
+
 ### ANT
 
 La consulta automática directa de puntos ANT todavía no está integrada. La
