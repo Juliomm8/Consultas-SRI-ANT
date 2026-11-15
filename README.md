@@ -5,16 +5,18 @@ Diseño y Arquitectura de Software.
 
 ## Objetivo
 
-Permitir consultas de contribuyentes y vehículos del SRI
-y puntos de licencia de la ANT mediante una aplicación web.
+Permitir consultas de contribuyentes y vehículos del SRI mediante una
+aplicación web y orientar al usuario al trámite oficial de información del
+conductor de la ANT. La consulta automática de puntos ANT todavía no está
+integrada.
 
 ## Tecnologías
 
 - React + TypeScript + Vite
 - Java 17 + Spring Boot 3.5.16
 - Maven Wrapper
-- Resilience4j (configuración ANT preparada, aún no conectada a una llamada real)
-- Redis Cloud (previsto; todavía no implementado)
+- Resilience4j (el Circuit Breaker protege el proveedor simulado solo en perfil local; no hay llamada ANT real)
+- Redis Cloud mediante Spring Data Redis (caché tipada configurable y fallback preparado en el caso de uso; desactivado por defecto y sin datos ANT reales)
 - Git y GitHub
 - IcePanel para los diagramas C4
 
@@ -30,12 +32,21 @@ el frontend React se comunica únicamente con esas rutas propias.
 ## Estado del proyecto
 
 Las consultas de contribuyentes y vehículos SRI están implementadas en el
-backend y conectadas desde el frontend. La consulta ANT continúa pendiente:
-durante las pruebas el portal oficial respondió HTTP 502 Bad Gateway y no se
-obtuvo una respuesta funcional que permita definir un adaptador seguro. La
-configuración `antPoints` de Resilience4j aún no protege una llamada real;
-Redis y el fallback siguen pendientes. No se presentan puntos simulados ni se
-interpreta una caída del proveedor como cero puntos.
+backend y conectadas desde el frontend. La consulta automática ANT continúa
+pendiente: no se localizó documentación oficial pública de una API de consulta
+automática y el portal respondió HTTP 502 durante las pruebas, sin que se pueda
+determinar qué componente de la ruta generó el error. La ANT dispone de un
+[trámite oficial para emitir el certificado de información del conductor](https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor),
+que es un flujo web para usuarios y no equivale por sí mismo a una API que esta
+aplicación pueda consumir. El backend ahora define un contrato normalizado para
+el total de puntos y permite probarlo con un simulador exclusivo del perfil
+`local-simulation`, enlazado a `127.0.0.1`. Su fuente se identifica como
+`SIMULATED`; no representa una consulta oficial y el frontend no lo consume. El
+circuit breaker protege únicamente ese límite simulado. La consulta ANT real
+sigue pendiente. Redis conserva solo resultados de fuente `ANT`; el caso de uso
+ya contempla el fallback a un resultado cacheado, pero no hay una integración
+ANT real que pueda producir o validar esos resultados en esta versión. Ver
+[modo de simulación y configuración Redis del backend](backend/README.md#simulación-local-de-puntos-ant).
 
 El diagnóstico técnico, la cronología de pruebas y sus limitaciones están en
 [Estado de la integración ANT](docs/integraciones/diagnostico-endpoints.md#estado-de-la-integración-ant).

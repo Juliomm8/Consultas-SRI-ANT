@@ -90,10 +90,13 @@ demuestran una respuesta exitosa del proveedor.
 
 ### ANT
 
-La interfaz informa que los puntos de licencia ANT no están disponibles en esta
-versión porque el portal oficial respondió HTTP 502 durante el diagnóstico. No
-hay formulario ni llamada de navegador a ANT, no se muestran puntos simulados y
-no se interpreta una caída como cero puntos. El estado técnico está descrito en
+La consulta automática directa de puntos ANT todavía no está integrada. La
+interfaz enlaza al [trámite oficial de información del conductor en Gob.ec](https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor),
+que es un flujo web oficial y no una API de consulta automática documentada
+para esta aplicación. No hay formulario ni llamada del navegador a ANT, no se
+solicitan datos para esta función y no se muestran puntos simulados. La consulta
+automática se habilitará cuando se confirme un mecanismo autorizado. El estado
+técnico está descrito en
 [`docs/integraciones/diagnostico-endpoints.md`](../docs/integraciones/diagnostico-endpoints.md#estado-de-la-integración-ant).
 
 ## Datos y privacidad
@@ -122,3 +125,34 @@ a la ANT. Para el contrato de backend, las limitaciones de las integraciones y
 la ejecución de sus pruebas, consulta [`../backend/README.md`](../backend/README.md),
 [`docs/api/contrato-v1.md`](../docs/api/contrato-v1.md) y el diagnóstico de
 integraciones enlazado arriba.
+
+## Prueba integral navegador a backend
+
+Instala las dependencias de desarrollo una vez y descarga Chromium de
+Playwright si no está instalado:
+
+```powershell
+npm install
+npx playwright install chromium
+```
+
+Ejecuta la prueba integral desde `frontend/`:
+
+```powershell
+npm run test:e2e
+```
+
+El comando empaqueta y arranca el JAR real de Spring Boot, inicia Vite y un
+servidor HTTP SRI simulado en puertos locales disponibles, y abre Chromium en
+modo headless. Verifica consultas sintéticas de contribuyente y vehículo, la
+propagación del `requestId` y el manejo seguro de una respuesta HTTP 503 del
+proveedor simulado. El perfil E2E del backend rechaza cualquier endpoint SRI
+que no apunte al mismo stub HTTP en `127.0.0.1`; Vite también rechaza un proxy
+no local en este modo. Al finalizar, el runner detiene los procesos que inició.
+
+La prueba recorre React → proxy Vite → Spring Boot, controladores, servicios y
+adaptadores HTTP reales → servidor SRI local simulado → respuesta en Chromium.
+No verifica disponibilidad real del SRI y no envía solicitudes a SRI o ANT.
+Sus identificaciones, correo y placa son fixtures sintéticos de prueba.
+El alcance y los resultados ejecutados están en
+[`docs/pruebas/e2e-sri-frontend-backend.md`](../docs/pruebas/e2e-sri-frontend-backend.md).
