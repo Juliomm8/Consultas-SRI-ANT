@@ -5,6 +5,7 @@ import ec.edu.udla.consultas.contribuyentes.application.port.out.ContribuyenteCo
 import ec.edu.udla.consultas.contribuyentes.domain.Contribuyente;
 import ec.edu.udla.consultas.contribuyentes.domain.Ruc;
 import ec.edu.udla.consultas.contribuyentes.domain.TipoPersona;
+import ec.edu.udla.consultas.contribuyentes.domain.ValorCampoContribuyente;
 import ec.edu.udla.consultas.shared.integration.sri.SriIntegrationException;
 import ec.edu.udla.consultas.shared.integration.sri.SriResponseSupport;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +15,24 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 public class SriContribuyenteHttpAdapter implements ContribuyenteConsultaPort {
+
+    private static final Set<String> OBSERVED_DATE_FIELDS = Set.of(
+            "fechaInicioActividades",
+            "fechaCese",
+            "fechaReinicioActividades",
+            "fechaActualizacion");
 
     private static final URI EXISTENCE_ENDPOINT = URI.create(
             "https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/ConsolidadoContribuyente/existePorNumeroRuc");
@@ -60,7 +73,7 @@ public class SriContribuyenteHttpAdapter implements ContribuyenteConsultaPort {
             throw SriIntegrationException.invalidResponse();
         }
 
-        return Optional.of(new Contribuyente(ruc, mapTipoPersona(details)));
+        return Optional.of(new Contribuyente(ruc, mapTipoPersona(details), mapObservedFields(details)));
     }
 
     private static TipoPersona mapTipoPersona(JsonNode details) {
@@ -71,6 +84,67 @@ public class SriContribuyenteHttpAdapter implements ContribuyenteConsultaPort {
         return "PERSONA NATURAL".equals(taxpayerType.textValue())
                 ? TipoPersona.NATURAL
                 : TipoPersona.NO_DETERMINADA;
+    }
+
+    private static Map<String, ValorCampoContribuyente> mapObservedFields(JsonNode details) {
+        Map<String, ValorCampoContribuyente> fields = new LinkedHashMap<>();
+        Iterator<Map.Entry<String, JsonNode>> properties = details.fields();
+        while (properties.hasNext()) {
+            Map.Entry<String, JsonNode> property = properties.next();
+            String name = property.getKey();
+            if (!Contribuyente.CAMPOS_SRI_OBSERVADOS.contains(name)) {
+                continue;
+            }
+            JsonNode value = property.getValue();
+            if ("informacionFechasContribuyente".equals(name) && value.isObject()) {
+                fields.put(name, mapDateFields(value));
+            } else {
+                fields.put(name, mapValue(value));
+            }
+        }
+        return fields;
+    }
+
+    private static ValorCampoContribuyente mapDateFields(JsonNode dates) {
+        Map<String, ValorCampoContribuyente> fields = new LinkedHashMap<>();
+        Iterator<Map.Entry<String, JsonNode>> properties = dates.fields();
+        while (properties.hasNext()) {
+            Map.Entry<String, JsonNode> property = properties.next();
+            if (OBSERVED_DATE_FIELDS.contains(property.getKey())) {
+                fields.put(property.getKey(), mapValue(property.getValue()));
+            }
+        }
+        return ValorCampoContribuyente.objeto(fields);
+    }
+
+    private static ValorCampoContribuyente mapValue(JsonNode value) {
+        if (value.isNull()) {
+            return ValorCampoContribuyente.nulo();
+        }
+        if (value.isTextual()) {
+            return ValorCampoContribuyente.texto(value.textValue());
+        }
+        if (value.isNumber()) {
+            return ValorCampoContribuyente.numero(value.decimalValue());
+        }
+        if (value.isBoolean()) {
+            return ValorCampoContribuyente.booleano(value.booleanValue());
+        }
+        if (value.isObject()) {
+            Map<String, ValorCampoContribuyente> fields = new LinkedHashMap<>();
+            Iterator<Map.Entry<String, JsonNode>> properties = value.fields();
+            while (properties.hasNext()) {
+                Map.Entry<String, JsonNode> property = properties.next();
+                fields.put(property.getKey(), mapValue(property.getValue()));
+            }
+            return ValorCampoContribuyente.objeto(fields);
+        }
+        if (value.isArray()) {
+            List<ValorCampoContribuyente> items = new ArrayList<>(value.size());
+            value.forEach(item -> items.add(mapValue(item)));
+            return ValorCampoContribuyente.arreglo(items);
+        }
+        throw SriIntegrationException.invalidResponse();
     }
 
     private static boolean matchesRequestedRuc(JsonNode details, Ruc requestedRuc) {
