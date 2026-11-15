@@ -4,12 +4,10 @@ import ec.edu.udla.consultas.vehiculos.application.port.in.ConsultarVehiculoQuer
 import ec.edu.udla.consultas.vehiculos.application.port.in.ConsultarVehiculoUseCase;
 import ec.edu.udla.consultas.vehiculos.application.port.out.VehiculoConsultaPort;
 import ec.edu.udla.consultas.vehiculos.domain.Vehiculo;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
 
-@Service
 public class ConsultarVehiculoService implements ConsultarVehiculoUseCase {
 
     private final VehiculoConsultaPort vehiculoConsultaPort;

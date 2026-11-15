@@ -8,11 +8,9 @@ import ec.edu.udla.consultas.contribuyentes.application.port.in.ConsultarContrib
 import ec.edu.udla.consultas.contribuyentes.application.port.out.ContribuyenteConsultaPort;
 import ec.edu.udla.consultas.contribuyentes.domain.Contribuyente;
 import ec.edu.udla.consultas.contribuyentes.domain.TipoPersona;
-import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
-@Service
 public class ConsultarContribuyenteService implements ConsultarContribuyenteUseCase {
 
     private final ContribuyenteConsultaPort contribuyenteConsultaPort;

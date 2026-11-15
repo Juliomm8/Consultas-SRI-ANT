@@ -48,25 +48,33 @@ class RequestDtoValidationTests {
     }
 
     @Test
-    void acceptsRucWithThirteenDigitsAsSyntaxOnly() {
-        ConsultarPuntosRequest request = new ConsultarPuntosRequest("0000000000000");
+    void acceptsTenDigitCedulaAsStructuralSyntaxOnly() {
+        ConsultarPuntosRequest request = new ConsultarPuntosRequest("0000000000");
 
         assertTrue(VALIDATOR.validate(request).isEmpty());
     }
 
     @Test
-    void rejectsMissingRuc() {
+    void rejectsMissingCedula() {
         ConsultarPuntosRequest request = new ConsultarPuntosRequest(null);
 
-        assertTrue(invalidProperties(request).contains("ruc"));
+        assertTrue(invalidProperties(request).contains("cedula"));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"123456789012", "12345678901234", "123456789012A"})
-    void rejectsRucWithWrongLengthOrNonDigitCharacters(String ruc) {
-        ConsultarPuntosRequest request = new ConsultarPuntosRequest(ruc);
+    @ValueSource(strings = {
+            "",
+            "123456789",
+            "12345678901",
+            "12345A7890",
+            "12345 7890",
+            "１２３４５６７８９０",
+            "१२३४५६७८९०"
+    })
+    void rejectsCedulaWithWrongLengthWhitespaceLettersOrUnicodeDigits(String cedula) {
+        ConsultarPuntosRequest request = new ConsultarPuntosRequest(cedula);
 
-        assertTrue(invalidProperties(request).contains("ruc"));
+        assertTrue(invalidProperties(request).contains("cedula"));
     }
 
     @Test
