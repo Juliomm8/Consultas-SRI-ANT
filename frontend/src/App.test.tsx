@@ -60,15 +60,17 @@ describe('Portal de consultas', () => {
   it('muestra el estado ANT pendiente y el enlace oficial sin consultar servicios', () => {
     render(<App />)
 
-    expect(screen.getByRole('heading', { name: /información clara para tus trámites/i })).toBeInTheDocument()
-    expect(screen.getByText(/la consulta automática directa de puntos de licencia todavía no está integrada/i)).toBeInTheDocument()
-    expect(screen.getByText(/mecanismo de integración autorizado/i)).toBeInTheDocument()
-    expect(screen.getByText(/no solicita datos personales para esta función y no muestra puntos simulados/i)).toBeInTheDocument()
-    const officialLink = screen.getByRole('link', { name: /consultar el trámite oficial en gob\.ec/i })
+    expect(screen.getByRole('heading', { name: /tu información, más clara y a tu alcance/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /puntos de licencia ant/i })).toBeInTheDocument()
+    expect(screen.getByText(/consulta automática directa de puntos todavía no está integrada/i)).toBeInTheDocument()
+    expect(screen.getByText(/no consulta la ant ni muestra puntos simulados/i)).toBeInTheDocument()
+    const officialLink = screen.getByRole('link', { name: /consultar el trámite oficial/i })
     expect(officialLink).toHaveAttribute('href', 'https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor')
     expect(officialLink).toHaveAttribute('target', '_blank')
     expect(officialLink).toHaveAttribute('rel', 'noopener noreferrer')
     expect(screen.getByRole('navigation', { name: 'Etapas de consulta' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /comenzar consulta/i })).toHaveAttribute('href', '#consulta')
+    expect(screen.getByRole('navigation', { name: 'Navegación principal' })).toBeInTheDocument()
     expect(screen.queryByLabelText(/cédula|pasaporte|identificación/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/resultado de puntos/i)).not.toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
@@ -308,7 +310,7 @@ describe('Portal de consultas', () => {
   it('usa solo las rutas del backend y nunca solicita identificación para ANT', async () => {
     render(<App />)
 
-    expect(screen.getByText(/la consulta automática directa de puntos de licencia todavía no está integrada/i)).toBeInTheDocument()
+    expect(screen.getByText(/consulta automática directa de puntos todavía no está integrada/i)).toBeInTheDocument()
     expect(screen.queryByLabelText(/cédula/i)).not.toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
   })

@@ -23,8 +23,13 @@ test('la demo ANT recorre React, Vite, Spring Boot y el simulador local', async 
 
   await page.goto('/')
   await expect(page.getByRole('heading', { name: /consulta de contribuyente/i })).toBeVisible()
-  await expect(page.getByRole('link', { name: /consultar el trámite oficial en gob\.ec/i })).toBeVisible()
-  await page.getByRole('button', { name: 'Abrir demostración ANT' }).click()
+  const officialProcedureLink = page.getByRole('link', { name: /consultar el trámite oficial/i })
+  await expect(officialProcedureLink).toBeVisible()
+  await expect(officialProcedureLink).toHaveAttribute(
+    'href',
+    'https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor',
+  )
+  await page.getByRole('button', { name: 'Demo local' }).click()
   await expect(page.getByRole('note', { name: 'Aviso permanente de simulación' }))
     .toContainText('MODO DEMOSTRACIÓN — DATOS SIMULADOS — NO OFICIALES')
 
