@@ -7,7 +7,9 @@ param(
     [ValidateRange(1024, 262144)]
     [int]$MaxBodyCharacters = 65536,
 
-    [switch]$SoloTipoContribuyente
+    [switch]$SoloTipoContribuyente,
+
+    [switch]$SoloANT
 )
 
 $minimumPowerShellVersion = [version]'7.2'
@@ -240,15 +242,14 @@ function Get-HtmlAttribute {
     )
 
     $escapedName = [System.Text.RegularExpressions.Regex]::Escape($Name)
-    $patterns = @(
-        '(?is)\b' + $escapedName + '\s*=\s*"([^"]*)"',
-        "(?is)\b$escapedName\s*=\s*'([^']*)'",
-        '(?is)\b' + $escapedName + '\s*=\s*([^\s>]+)'
-    )
-    foreach ($pattern in $patterns) {
-        $match = [System.Text.RegularExpressions.Regex]::Match($Tag, $pattern)
-        if ($match.Success) { return $match.Groups[1].Value }
-    }
+    $attributeMatch = [System.Text.RegularExpressions.Regex]::Match($Tag, '(?is)\b' + $escapedName + '\s*=\s*"([^"]*)"')
+    if ($attributeMatch.Success) { return $attributeMatch.Groups[1].Value }
+
+    $attributeMatch = [System.Text.RegularExpressions.Regex]::Match($Tag, "(?is)\b$escapedName\s*=\s*'([^']*)'")
+    if ($attributeMatch.Success) { return $attributeMatch.Groups[1].Value }
+
+    $attributeMatch = [System.Text.RegularExpressions.Regex]::Match($Tag, '(?is)\b' + $escapedName + '\s*=\s*([^\s>]+)')
+    if ($attributeMatch.Success) { return $attributeMatch.Groups[1].Value }
     return $null
 }
 
@@ -263,6 +264,16 @@ function Test-SensitivePathSegment {
     }
 
     if ($decoded -match '[\r\n\\/]' -or $decoded -match '@') { return $true }
+
+    $knownPublicRoutes = @(
+        'PortalWEB',
+        'paginas',
+        'clientes',
+        'clp_criterio_consulta.jsp',
+        'clp_grid_citaciones.jsp',
+        'clp_grid_puntos.jsp'
+    )
+    if ($knownPublicRoutes -icontains $decoded) { return $false }
 
     $sensitivePatterns = @(
         '(?i)(?<![0-9a-f])[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![0-9a-f])',
@@ -302,7 +313,7 @@ function Get-SafePath {
 function Get-SafeAction {
     param(
         [Parameter(Mandatory)][System.Uri]$BaseUri,
-        [Parameter(Mandatory)][string]$Action
+        [Parameter(Mandatory)][AllowNull()][AllowEmptyString()][string]$Action
     )
 
     if ([string]::IsNullOrWhiteSpace($Action)) { return '(misma ruta)' }
@@ -413,9 +424,14 @@ function Get-ResponseAnalysis {
             BooleanValue = $null
             PageTitle = $false
             Forms = ''
+            FormCount = 0
             FieldNames = ''
+            HiddenFieldNames = ''
             TableCount = 0
             TableHeaders = ''
+            UsesAjax = $false
+            HasIframe = $false
+            PointsViewReferences = 0
             Indicators = ''
         }
     }
@@ -432,9 +448,14 @@ function Get-ResponseAnalysis {
                 BooleanValue = $null
                 PageTitle = $false
                 Forms = ''
+                FormCount = 0
                 FieldNames = ''
+                HiddenFieldNames = ''
                 TableCount = 0
                 TableHeaders = ''
+                UsesAjax = $false
+                HasIframe = $false
+                PointsViewReferences = 0
                 Indicators = ''
             }
         }
@@ -448,9 +469,14 @@ function Get-ResponseAnalysis {
                 BooleanValue = if ($hasBoolean) { [bool]$parsed } else { $null }
                 PageTitle = $false
                 Forms = ''
+                FormCount = 0
                 FieldNames = ''
+                HiddenFieldNames = ''
                 TableCount = 0
                 TableHeaders = ''
+                UsesAjax = $false
+                HasIframe = $false
+                PointsViewReferences = 0
                 Indicators = ''
             }
         }
@@ -462,9 +488,14 @@ function Get-ResponseAnalysis {
                 BooleanValue = $null
                 PageTitle = $false
                 Forms = ''
+                FormCount = 0
                 FieldNames = ''
+                HiddenFieldNames = ''
                 TableCount = 0
                 TableHeaders = ''
+                UsesAjax = $false
+                HasIframe = $false
+                PointsViewReferences = 0
                 Indicators = ''
             }
         }
@@ -473,26 +504,43 @@ function Get-ResponseAnalysis {
     if ($MediaType -match '(?i)html' -or $trimmed -match '(?is)^<!doctype\s+html|^<html\b') {
         $hasTitle = [System.Text.RegularExpressions.Regex]::IsMatch($Body, '(?is)<title\b[^>]*>')
         $formDetails = [System.Collections.Generic.List[string]]::new()
+        $formActionHasQuery = $false
         foreach ($tag in [System.Text.RegularExpressions.Regex]::Matches($Body, '(?is)<form\b[^>]*>')) {
             $method = Get-HtmlAttribute -Tag $tag.Value -Name 'method'
             if ([string]::IsNullOrWhiteSpace($method)) { $method = 'GET (predeterminado)' }
             elseif ($method -match '^(?i:get|post|put|delete|options|head|patch)$') { $method = $method.ToUpperInvariant() }
             else { $method = '(método no estándar omitido)' }
             $action = Get-HtmlAttribute -Tag $tag.Value -Name 'action'
+            try {
+                $actionUri = if ([string]::IsNullOrWhiteSpace($action)) { $BaseUri } else { [System.Uri]::new($BaseUri, $action) }
+                if (-not [string]::IsNullOrEmpty($actionUri.Query)) { $formActionHasQuery = $true }
+            }
+            catch {
+                $formActionHasQuery = $true
+            }
             $formDetails.Add("$method $(Get-SafeAction -BaseUri $BaseUri -Action $action)")
         }
 
         $fieldNames = [System.Collections.Generic.List[string]]::new()
+        $hiddenFieldNames = [System.Collections.Generic.List[string]]::new()
         $fieldTags = [System.Text.RegularExpressions.Regex]::Matches($Body, '(?is)<(?:input|select|textarea|button)\b[^>]*>')
         foreach ($tag in $fieldTags) {
             $name = Get-HtmlAttribute -Tag $tag.Value -Name 'name'
             if (-not [string]::IsNullOrWhiteSpace($name)) {
                 $safeName = Get-SafeName -Name $name
                 if (-not $fieldNames.Contains($safeName)) { $fieldNames.Add($safeName) }
+                $type = Get-HtmlAttribute -Tag $tag.Value -Name 'type'
+                if ($tag.Value -match '(?is)^<input\b' -and $type -match '^(?i:hidden)$' -and -not $hiddenFieldNames.Contains($safeName)) {
+                    $hiddenFieldNames.Add($safeName)
+                }
             }
         }
 
         $tableCount = [System.Text.RegularExpressions.Regex]::Matches($Body, '(?is)<table\b').Count
+        $hasScripts = [System.Text.RegularExpressions.Regex]::IsMatch($Body, '(?is)<script\b')
+        $hasIframe = [System.Text.RegularExpressions.Regex]::IsMatch($Body, '(?is)<iframe\b')
+        $usesAjax = [System.Text.RegularExpressions.Regex]::IsMatch($Body, '(?is)\bXMLHttpRequest\b|\bfetch\s*\(|\bajax\s*\(|\$\.get\s*\(|\$\.post\s*\(|\bFormData\b')
+        $pointsViewReferences = [System.Text.RegularExpressions.Regex]::Matches($Body, '(?i)(?:href|action|src)\s*=\s*["''][^"'']*clp_grid_puntos\.jsp').Count
         $tableHeaders = [System.Collections.Generic.List[string]]::new()
         foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($Body, '(?is)<th\b[^>]*>(.*?)</th>') | Select-Object -First 30) {
             $header = [System.Text.RegularExpressions.Regex]::Replace($match.Groups[1].Value, '<[^>]+>', '')
@@ -510,7 +558,9 @@ function Get-ResponseAnalysis {
             @{ Pattern = '(?i)acceso denegado|access denied|forbidden|no autorizado'; Label = 'indicio de restricción de acceso' },
             @{ Pattern = '(?i)error|parámetro requerido|parametro requerido|campo obligatorio'; Label = 'indicio de error o validación' },
             @{ Pattern = '(?i)puntos.{0,30}licencia|licencia.{0,30}puntos'; Label = 'referencia a puntos de licencia' },
-            @{ Pattern = '(?i)\bpuntos\b'; Label = 'referencia a puntos' }
+            @{ Pattern = '(?i)\bpuntos\b'; Label = 'referencia a puntos' },
+            @{ Pattern = '(?is)<script\b|\bXMLHttpRequest\b|\bfetch\s*\(|\bajax\s*\(|\$\.get\s*\(|\$\.post\s*\(|\bFormData\b'; Label = 'indicio de JavaScript/AJAX' },
+            @{ Pattern = '(?is)<iframe\b'; Label = 'indicio de iframe' }
         )
         foreach ($entry in $patterns) {
             if ($Body -match $entry.Pattern) { $labels.Add($entry.Label) }
@@ -527,9 +577,16 @@ function Get-ResponseAnalysis {
             BooleanValue = $null
             PageTitle = $hasTitle
             Forms = $formDetails -join '; '
+            FormCount = $formDetails.Count
+            FormActionHasQuery = $formActionHasQuery
             FieldNames = $fieldNames -join ', '
+            HiddenFieldNames = $hiddenFieldNames -join ', '
             TableCount = $tableCount
             TableHeaders = $tableHeaders -join ' | '
+            UsesAjax = $usesAjax
+            HasScripts = $hasScripts
+            HasIframe = $hasIframe
+            PointsViewReferences = $pointsViewReferences
             Indicators = $labels -join '; '
         }
     }
@@ -543,9 +600,14 @@ function Get-ResponseAnalysis {
         BooleanValue = $null
         PageTitle = $false
         Forms = ''
+        FormCount = 0
         FieldNames = ''
+        HiddenFieldNames = ''
         TableCount = 0
         TableHeaders = ''
+        UsesAjax = $false
+        HasIframe = $false
+        PointsViewReferences = 0
         Indicators = ''
     }
 }
@@ -579,6 +641,18 @@ function Get-SafeUriPath {
     return "$($Uri.Scheme)://$($Uri.Authority)$safePath"
 }
 
+function Test-SafeRedirect {
+    param(
+        [Parameter(Mandatory)][System.Uri]$InitialUri,
+        [Parameter(Mandatory)][System.Uri]$NextUri,
+        [Parameter(Mandatory)][int]$RedirectCount
+    )
+
+    return $NextUri.Scheme -eq 'https' -and
+        $NextUri.Host -eq $InitialUri.Host -and
+        $RedirectCount -lt 5
+}
+
 function Get-HttpStatusMeaning {
     param($StatusCode)
 
@@ -599,6 +673,12 @@ function Get-HttpStatusMeaning {
     }
 }
 
+function Test-AntRetryStatus {
+    param([AllowNull()][Nullable[int]]$StatusCode)
+
+    return $StatusCode -in @(502, 503, 504)
+}
+
 function Invoke-EndpointGet {
     param(
         [Parameter(Mandatory)][string]$Service,
@@ -606,15 +686,25 @@ function Invoke-EndpointGet {
         [Parameter(Mandatory)][System.Collections.IDictionary]$Parameters,
         [Parameter(Mandatory)][int]$TimeoutSeconds,
         [Parameter(Mandatory)][int]$MaxBodyCharacters,
-        [switch]$CaptureTaxpayerType
+        [switch]$CaptureTaxpayerType,
+        [System.Net.CookieContainer]$CookieContainer
     )
 
     $start = [DateTimeOffset]::Now
     $parameterNames = @($Parameters.Keys) -join ', '
     $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    if ($null -ne $CookieContainer) {
+        $antUri = [System.Uri]::new($BaseUrl)
+        if ($antUri.Scheme -ne 'https' -or $antUri.Host -cne 'consultaweb.ant.gob.ec') {
+            throw 'La cookie jar en memoria está limitada al host oficial de ANT.'
+        }
+    }
     $handler = [System.Net.Http.HttpClientHandler]::new()
     $handler.AllowAutoRedirect = $false
-    $handler.UseCookies = $false
+    $handler.UseCookies = $null -ne $CookieContainer
+    if ($null -ne $CookieContainer) {
+        $handler.CookieContainer = $CookieContainer
+    }
     $handler.UseDefaultCredentials = $false
     $handler.AutomaticDecompression = [System.Net.DecompressionMethods]::GZip -bor [System.Net.DecompressionMethods]::Deflate
     $client = [System.Net.Http.HttpClient]::new($handler)
@@ -645,7 +735,12 @@ function Invoke-EndpointGet {
 
     try {
         $query = New-EncodedQuery -Parameters $Parameters
-        $requestUri = [System.Uri]::new("${BaseUrl}?${query}")
+        $requestUri = if ([string]::IsNullOrEmpty($query)) {
+            [System.Uri]::new($BaseUrl)
+        }
+        else {
+            [System.Uri]::new("${BaseUrl}?${query}")
+        }
         $currentUri = $requestUri
         for ($hop = 0; $hop -le 5; $hop++) {
             $phase = 'conexión'
@@ -663,8 +758,18 @@ function Invoke-EndpointGet {
             $contentType = if ($response.Content.Headers.ContentType) { $response.Content.Headers.ContentType.ToString() } else { '' }
             if ($response.Headers.Contains('Set-Cookie')) { $cookiesIssued = $true }
             if ($response.Headers.Contains('WWW-Authenticate')) { $authHeaderSeen = $true }
-            if ($response.Headers.CacheControl) { $cacheControl = $response.Headers.CacheControl.ToString() }
-            if ($response.Headers.RetryAfter) { $retryAfter = $response.Headers.RetryAfter.ToString() }
+            if ($response.Headers.CacheControl) { $cacheControl = 'presente; valor omitido' }
+            if ($response.Headers.RetryAfter) {
+                if ($response.Headers.RetryAfter.Delta) {
+                    $retryAfter = $response.Headers.RetryAfter.Delta.ToString()
+                }
+                elseif ($response.Headers.RetryAfter.Date) {
+                    $retryAfter = $response.Headers.RetryAfter.Date.ToString('o')
+                }
+                else {
+                    $retryAfter = 'presente; valor omitido'
+                }
+            }
 
             if ($statusCode -notin @(300, 301, 302, 303, 307, 308)) { break }
             $location = $response.Headers.Location
@@ -674,12 +779,12 @@ function Invoke-EndpointGet {
             }
             $nextUri = if ($location.IsAbsoluteUri) { $location } else { [System.Uri]::new($currentUri, $location) }
             $redirects.Add("HTTP $statusCode -> $(Get-SafeUriPath -Uri $nextUri)")
-            if ($nextUri.Scheme -ne 'https' -or $nextUri.Host -ne $requestUri.Host) {
-                $redirectNote = 'no seguida: cambiaría HTTPS o el host de destino'
-                break
-            }
             if ($redirects.Count -ge 5) {
                 $redirectNote = 'límite de cinco redirecciones alcanzado'
+                break
+            }
+            if (-not (Test-SafeRedirect -InitialUri $requestUri -NextUri $nextUri -RedirectCount $redirects.Count)) {
+                $redirectNote = 'no seguida: cambiaría HTTPS o el host de destino'
                 break
             }
 
@@ -764,6 +869,13 @@ function Invoke-EndpointGet {
         FieldNames = if ($analysis) { $analysis.FieldNames } else { '' }
         TableCount = if ($analysis) { $analysis.TableCount } else { 0 }
         TableHeaders = if ($analysis) { $analysis.TableHeaders } else { '' }
+        PointsViewReferences = if ($analysis -and $analysis.PSObject.Properties['PointsViewReferences']) { $analysis.PointsViewReferences } else { 0 }
+        FormCount = if ($analysis -and $analysis.PSObject.Properties['FormCount']) { $analysis.FormCount } else { 0 }
+        FormActionHasQuery = if ($analysis -and $analysis.PSObject.Properties['FormActionHasQuery']) { $analysis.FormActionHasQuery } else { $false }
+        HiddenFieldNames = if ($analysis -and $analysis.PSObject.Properties['HiddenFieldNames']) { $analysis.HiddenFieldNames } else { '' }
+        UsesAjax = if ($analysis -and $analysis.PSObject.Properties['UsesAjax']) { $analysis.UsesAjax } else { $false }
+        HasScripts = if ($analysis -and $analysis.PSObject.Properties['HasScripts']) { $analysis.HasScripts } else { $false }
+        HasIframe = if ($analysis -and $analysis.PSObject.Properties['HasIframe']) { $analysis.HasIframe } else { $false }
         Indicators = if ($analysis) { $analysis.Indicators } else { '' }
         RelevantHeaders = if ($headers.Count -gt 0) { $headers -join '; ' } else { 'ninguno observado' }
         TaxpayerTypeInspectionAvailable = $taxpayerTypeInspectionAvailable
@@ -788,9 +900,13 @@ function Show-DiagnosticResult {
     if ($Result.ResponseType -eq 'HTML') {
         $titleSummary = if ($Result.PageTitle) { 'presente; texto omitido' } else { 'no observado' }
         Write-Host "Título HTML: $titleSummary"
-        Write-Host "Formularios: $(if ($Result.Forms) { $Result.Forms } else { 'ninguno observado' })"
+        Write-Host "Formularios: $($Result.FormCount); $(if ($Result.Forms) { $Result.Forms } else { 'ninguno observado' })"
         Write-Host "Nombres de campos: $(if ($Result.FieldNames) { $Result.FieldNames } else { 'ninguno observado' })"
+        Write-Host "Nombres de campos ocultos: $(if ($Result.HiddenFieldNames) { $Result.HiddenFieldNames } else { 'ninguno observado' })"
         Write-Host "Tablas: $($Result.TableCount); encabezados: $(if ($Result.TableHeaders) { $Result.TableHeaders } else { 'ninguno observado' })"
+        Write-Host "Scripts: $(if ($Result.HasScripts) { 'observados' } else { 'no observados' }); AJAX: $(if ($Result.UsesAjax) { 'indicio observado' } else { 'no observado' }); iframe: $(if ($Result.HasIframe) { 'observado' } else { 'no observado' })"
+        Write-Host "Query en action del formulario: $(if ($Result.FormActionHasQuery) { 'presente; valores omitidos' } else { 'no observada' })"
+        Write-Host "Referencias a la vista de puntos: $($Result.PointsViewReferences)"
     }
     Write-Host "Indicadores: $(if ($Result.Indicators) { $Result.Indicators } else { 'ninguno observado' })"
     Write-Host "Encabezados relevantes: $($Result.RelevantHeaders)"
@@ -801,21 +917,22 @@ function Invoke-AntRequestWithSingleRetry {
     param(
         [Parameter(Mandatory)][System.Collections.IDictionary]$Parameters,
         [Parameter(Mandatory)][int]$TimeoutSeconds,
-        [Parameter(Mandatory)][int]$MaxBodyCharacters
+        [Parameter(Mandatory)][int]$MaxBodyCharacters,
+        [string]$BaseUrl = 'https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_grid_citaciones.jsp',
+        [System.Net.CookieContainer]$CookieContainer
     )
 
     $platePresent = $Parameters.Contains('ps_placa') -and -not [string]::IsNullOrEmpty([string]$Parameters['ps_placa'])
     $value = "ps_tipo_identificacion=CED; ps_identificacion=presente; ps_placa=$(if ($platePresent) { 'presente' } elseif ($Parameters.Contains('ps_placa')) { 'vacío' } else { 'omitido' })"
     Write-Host "`nANT — GET; $value (valores omitidos)"
-    $baseUrl = 'https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_grid_citaciones.jsp'
     $baseRequest = $null
     try {
-        $baseRequest = Invoke-AntGet -BaseUrl $baseUrl -Parameters $Parameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
+        $baseRequest = Invoke-AntGet -BaseUrl $BaseUrl -Parameters $Parameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters -CookieContainer $CookieContainer
         Show-DiagnosticResult -Result $baseRequest
-        if ($baseRequest.StatusCode -in @(502, 503, 504)) {
+        if (Test-AntRetryStatus -StatusCode $baseRequest.StatusCode) {
             Write-Host 'Gateway no disponible; se esperarán 10 segundos antes del único reintento permitido.'
             Start-Sleep -Seconds 10
-            $retryRequest = Invoke-AntGet -BaseUrl $baseUrl -Parameters $Parameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
+            $retryRequest = Invoke-AntGet -BaseUrl $BaseUrl -Parameters $Parameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters -CookieContainer $CookieContainer
             Show-DiagnosticResult -Result $retryRequest
             return $retryRequest
         }
@@ -823,6 +940,7 @@ function Invoke-AntRequestWithSingleRetry {
     }
     finally {
         $baseRequest = $null
+        foreach ($key in @($Parameters.Keys)) { $Parameters[$key] = $null }
         $Parameters = $null
         $value = $null
         $platePresent = $null
@@ -834,17 +952,138 @@ function Invoke-AntGet {
         [Parameter(Mandatory)][string]$BaseUrl,
         [Parameter(Mandatory)][System.Collections.IDictionary]$Parameters,
         [Parameter(Mandatory)][int]$TimeoutSeconds,
-        [Parameter(Mandatory)][int]$MaxBodyCharacters
+        [Parameter(Mandatory)][int]$MaxBodyCharacters,
+        [System.Net.CookieContainer]$CookieContainer
     )
 
     $result = $null
+    $requestParameters = [ordered]@{}
     try {
-        $result = Invoke-EndpointGet -Service 'ANT — consulta web' -BaseUrl $BaseUrl -Parameters $Parameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters
+        foreach ($key in $Parameters.Keys) { $requestParameters[$key] = $Parameters[$key] }
+        $result = Invoke-EndpointGet -Service 'ANT — consulta web' -BaseUrl $BaseUrl -Parameters $requestParameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters -CookieContainer $CookieContainer
         return $result
     }
     finally {
+        foreach ($key in @($requestParameters.Keys)) { $requestParameters[$key] = $null }
+        $requestParameters = $null
         $Parameters = $null
         $result = $null
+    }
+}
+
+function Test-AntQueryFormObserved {
+    param([Parameter(Mandatory)]$Result)
+
+    if ($Result.StatusCode -ne 200 -or $Result.ResponseType -ne 'HTML' -or $Result.FormCount -ne 1) { return $false }
+    if ($Result.HiddenFieldNames -or $Result.FormActionHasQuery -or $Result.UsesAjax -or $Result.HasScripts -or $Result.HasIframe) { return $false }
+    if ($Result.RelevantHeaders -match '(?i)WWW-Authenticate') { return $false }
+    if ($Result.Indicators -match '(?i)CAPTCHA|autenticaci[oó]n|restricci[oó]n de acceso') { return $false }
+
+    $expectedForm = '^(?i:GET(?: \(predeterminado\))?) https://consultaweb\.ant\.gob\.ec/PortalWEB/paginas/clientes/clp_grid_citaciones\.jsp$'
+    if ($Result.Forms -cnotmatch $expectedForm) { return $false }
+
+    $fields = @($Result.FieldNames -split ',\s*' | Where-Object { $_ })
+    if ($fields.Count -ne 3) { return $false }
+    foreach ($requiredField in @('ps_tipo_identificacion', 'ps_identificacion', 'ps_placa')) {
+        if ($fields -cnotcontains $requiredField) { return $false }
+    }
+    return $true
+}
+
+function Test-AntAccessRestriction {
+    param([Parameter(Mandatory)]$Result)
+
+    return $Result.StatusCode -in @(401, 403) -or
+        $Result.RelevantHeaders -match '(?i)WWW-Authenticate' -or
+        $Result.Indicators -match '(?i)CAPTCHA|autenticaci[oó]n|restricci[oó]n de acceso'
+}
+
+function Invoke-AntOnlyDiagnostics {
+    $cedula = $null
+    $plate = $null
+    $consent = $null
+    $cookieJar = [System.Net.CookieContainer]::new()
+    $portalResult = $null
+    $criteriaResult = $null
+    $pointsPageResult = $null
+    $requestParameters = $null
+    $diagnosticResult = $null
+    try {
+        Write-Host 'Modo exclusivo ANT. Se inspeccionará el portal oficial antes de enviar identificadores.'
+        Write-Host 'La cookie jar, si el portal la establece, permanecerá solo en memoria y limitada a consultaweb.ant.gob.ec.'
+
+        $portalUrl = 'https://consultaweb.ant.gob.ec/PortalWEB/'
+        $portalResult = Invoke-AntGet -BaseUrl $portalUrl -Parameters ([ordered]@{}) -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters -CookieContainer $cookieJar
+        Show-DiagnosticResult -Result $portalResult
+        if ($null -eq $portalResult.StatusCode -or $portalResult.StatusCode -lt 200 -or $portalResult.StatusCode -ge 300 -or $portalResult.ResponseType -ne 'HTML') {
+            Write-Host 'El portal inicial no entregó HTML funcional; no se solicitaron ni enviaron identificadores.'
+            return
+        }
+
+        $criteriaUrl = 'https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_criterio_consulta.jsp'
+        $criteriaResult = Invoke-AntGet -BaseUrl $criteriaUrl -Parameters ([ordered]@{}) -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters -CookieContainer $cookieJar
+        Show-DiagnosticResult -Result $criteriaResult
+        if ($criteriaResult.StatusCode -ne 200 -or $criteriaResult.ResponseType -ne 'HTML') {
+            Write-Host 'La página de criterios no entregó HTML funcional; no se solicitaron ni enviaron identificadores.'
+            return
+        }
+        if (Test-AntAccessRestriction -Result $criteriaResult) {
+            Write-Host 'La página de criterios indica autenticación, CAPTCHA o acceso restringido; se detiene el diagnóstico.'
+            return
+        }
+
+        $pointsPageUrl = 'https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_grid_puntos.jsp'
+        $pointsPageResult = Invoke-AntGet -BaseUrl $pointsPageUrl -Parameters ([ordered]@{}) -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters -CookieContainer $cookieJar
+        Show-DiagnosticResult -Result $pointsPageResult
+        if (Test-AntAccessRestriction -Result $pointsPageResult) {
+            Write-Host 'La vista de puntos indica autenticación, CAPTCHA o acceso restringido; se detiene el diagnóstico.'
+            return
+        }
+
+        if (-not (Test-AntQueryFormObserved -Result $criteriaResult)) {
+            Write-Host 'No se observó el formulario GET esperado sin requisitos adicionales. No se envió una cédula ni se ejecutó la consulta de puntos.'
+            return
+        }
+
+        $cedula = Read-PrivateValue -Prompt 'Cédula propia o expresamente autorizada para ANT (10 dígitos ASCII)' -Pattern '^[0-9]{10}$'
+        if ($null -eq $cedula) {
+            Write-Host 'Formato de cédula no válido; no se envió ninguna consulta.'
+            return
+        }
+
+        $requestParameters = New-AntRequestParameters -Cedula $cedula -Plate '' -IncludePlate
+        $queryUrl = 'https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_grid_citaciones.jsp'
+        $diagnosticResult = Invoke-AntRequestWithSingleRetry -BaseUrl $queryUrl -Parameters $requestParameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters -CookieContainer $cookieJar
+        $diagnosticResult = $null
+        $requestParameters = $null
+
+        $consent = Read-Host '¿Autoriza enviar una placa propia o autorizada en una segunda consulta ANT? Escriba S para autorizar o N para omitir'
+        $authorizedPlate = $consent -match '^(?i:s|si|sí)$'
+        $consent = $null
+        if (-not $authorizedPlate) {
+            Write-Host 'No se autorizó el envío opcional de placa; terminó el diagnóstico ANT.'
+            return
+        }
+
+        $plate = Read-PrivateValue -Prompt 'Placa propia o expresamente autorizada (letras y números ASCII)' -Pattern '^[A-Za-z0-9]+$'
+        if ($null -eq $plate) {
+            Write-Host 'Formato de placa no válido; no se ejecutó la variante opcional.'
+            return
+        }
+
+        $requestParameters = New-AntRequestParameters -Cedula $cedula -Plate $plate -IncludePlate
+        $diagnosticResult = Invoke-AntRequestWithSingleRetry -BaseUrl $queryUrl -Parameters $requestParameters -TimeoutSeconds $TimeoutSeconds -MaxBodyCharacters $MaxBodyCharacters -CookieContainer $cookieJar
+    }
+    finally {
+        $cedula = $null
+        $plate = $null
+        $consent = $null
+        $cookieJar = $null
+        $portalResult = $null
+        $criteriaResult = $null
+        $pointsPageResult = $null
+        $requestParameters = $null
+        $diagnosticResult = $null
     }
 }
 
@@ -957,7 +1196,13 @@ function Invoke-PrivateDiagnostics {
 }
 
 try {
-    if ($SoloTipoContribuyente) {
+    if ($SoloTipoContribuyente -and $SoloANT) {
+        throw 'Use solo uno de los modos exclusivos: -SoloTipoContribuyente o -SoloANT.'
+    }
+    elseif ($SoloANT) {
+        Invoke-AntOnlyDiagnostics
+    }
+    elseif ($SoloTipoContribuyente) {
         Invoke-TaxpayerTypeOnly
     }
     else {
