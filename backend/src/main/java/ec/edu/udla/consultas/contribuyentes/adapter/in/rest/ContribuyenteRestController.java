@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/contribuyentes")
@@ -37,9 +36,7 @@ public class ContribuyenteRestController {
         ContribuyenteResponseDto data = ContribuyenteResponseDto.from(
                 consultarContribuyenteUseCase.consultar(query));
         ApiMeta meta = createMeta(httpRequest);
-        return ResponseEntity.ok()
-                .header(RequestIdFilter.HEADER_NAME, meta.requestId())
-                .body(new ApiResponse<>(data, meta));
+        return ResponseEntity.ok(new ApiResponse<>(data, meta));
     }
 
     private static ApiMeta createMeta(HttpServletRequest request) {
@@ -47,6 +44,6 @@ public class ContribuyenteRestController {
         if (requestId instanceof String value && !value.isBlank()) {
             return new ApiMeta(value, "SRI", Instant.now());
         }
-        return new ApiMeta(UUID.randomUUID().toString(), "SRI", Instant.now());
+        throw new IllegalStateException("No se generó el identificador de solicitud.");
     }
 }

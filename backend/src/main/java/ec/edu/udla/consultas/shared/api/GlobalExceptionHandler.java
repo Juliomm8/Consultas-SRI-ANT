@@ -151,7 +151,6 @@ public class GlobalExceptionHandler {
             String requestId) {
         ApiError body = new ApiError(new ApiError.ErrorDetail(code, message, requestId));
         return ResponseEntity.status(status)
-                .header(RequestIdFilter.HEADER_NAME, requestId)
                 .body(body);
     }
 

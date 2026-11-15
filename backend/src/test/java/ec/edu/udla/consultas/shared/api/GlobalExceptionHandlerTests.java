@@ -89,6 +89,7 @@ class GlobalExceptionHandlerTests {
         String headerRequestId = result.getResponse().getHeader(REQUEST_ID_HEADER);
         String bodyRequestId = JsonPath.read(result.getResponse().getContentAsString(), "$.error.requestId");
 
+        assertEquals(1, result.getResponse().getHeaders(REQUEST_ID_HEADER).size());
         assertNotNull(headerRequestId);
         assertEquals(headerRequestId, bodyRequestId);
         assertDoesNotThrow(() -> UUID.fromString(bodyRequestId));

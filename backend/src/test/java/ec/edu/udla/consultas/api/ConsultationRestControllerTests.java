@@ -281,6 +281,7 @@ class ConsultationRestControllerTests {
             throws Exception {
         String headerId = result.getResponse().getHeader(RequestIdFilter.HEADER_NAME);
         String bodyId = JsonPath.read(result.getResponse().getContentAsString(), bodyPath);
+        assertEquals(1, result.getResponse().getHeaders(RequestIdFilter.HEADER_NAME).size());
         assertTrue(headerId != null && !headerId.isBlank());
         assertEquals(headerId, bodyId);
         assertDoesNotThrow(() -> UUID.fromString(bodyId));

@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/vehiculos")
@@ -38,9 +37,7 @@ public class VehiculoRestController {
                 .map(VehiculoResponseDto::from)
                 .toList();
         ApiMeta meta = createMeta(httpRequest);
-        return ResponseEntity.ok()
-                .header(RequestIdFilter.HEADER_NAME, meta.requestId())
-                .body(new ApiResponse<>(data, meta));
+        return ResponseEntity.ok(new ApiResponse<>(data, meta));
     }
 
     private static ApiMeta createMeta(HttpServletRequest request) {
@@ -48,6 +45,6 @@ public class VehiculoRestController {
         if (requestId instanceof String value && !value.isBlank()) {
             return new ApiMeta(value, "SRI", Instant.now());
         }
-        return new ApiMeta(UUID.randomUUID().toString(), "SRI", Instant.now());
+        throw new IllegalStateException("No se generó el identificador de solicitud.");
     }
 }
