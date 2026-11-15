@@ -2,12 +2,15 @@ import { useState } from 'react'
 import { AntStatusCard } from './features/ant/components/AntStatusCard'
 import { TaxpayerForm } from './features/contribuyentes/components/TaxpayerForm'
 import { consultarContribuyente } from './features/contribuyentes/api/contribuyentesApi'
+import { VehicleForm } from './features/vehiculos/components/VehicleForm'
+import { consultarVehiculos } from './features/vehiculos/api/vehiculosApi'
 import { ApiRequestError } from './shared/api/apiClient'
-import type { ApiSuccess, ContribuyenteResponse } from './shared/api/contracts'
+import type { ApiSuccess, ContribuyenteResponse, VehiculoResponse } from './shared/api/contracts'
 import { FieldList } from './shared/components/FieldList'
 import './App.css'
 
 interface VisibleError {
+  stage: 'taxpayer' | 'vehicle'
   message: string
   requestId?: string
 }
@@ -23,9 +26,24 @@ function taxpayerClassificationError(type: ContribuyenteResponse['tipoPersona'])
   return 'El SRI no permitió confirmar el tipo de persona.'
 }
 
+function ErrorNotice({ error }: { error: VisibleError }) {
+  return (
+    <div className="feedback feedback--error" role="alert">
+      <span className="feedback-icon" aria-hidden="true">!</span>
+      <div>
+        <strong>No se pudo completar la consulta</strong>
+        <p>{error.message}</p>
+        {error.requestId && <small>Referencia de solicitud: <code>{error.requestId}</code></small>}
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [taxpayerResult, setTaxpayerResult] = useState<ApiSuccess<ContribuyenteResponse> | null>(null)
+  const [vehicleResult, setVehicleResult] = useState<ApiSuccess<VehiculoResponse[]> | null>(null)
   const [taxpayerLoading, setTaxpayerLoading] = useState(false)
+  const [vehicleLoading, setVehicleLoading] = useState(false)
   const [error, setError] = useState<VisibleError | null>(null)
 
   async function handleTaxpayerSubmit(email: string, ruc: string) {
@@ -35,6 +53,7 @@ function App() {
       const result = await consultarContribuyente({ email, ruc })
       if (result.data.tipoPersona !== 'NATURAL') {
         setError({
+          stage: 'taxpayer',
           message: taxpayerClassificationError(result.data.tipoPersona),
           requestId: result.meta.requestId,
         })
@@ -43,15 +62,31 @@ function App() {
       setTaxpayerResult(result)
     } catch (requestError) {
       setError(requestError instanceof ApiRequestError
-        ? { message: requestError.message, requestId: requestError.requestId }
-        : { message: 'No pudimos completar la consulta. Inténtalo nuevamente.' })
+        ? { stage: 'taxpayer', message: requestError.message, requestId: requestError.requestId }
+        : { stage: 'taxpayer', message: 'No pudimos completar la consulta. Inténtalo nuevamente.' })
     } finally {
       setTaxpayerLoading(false)
     }
   }
 
+  async function handleVehicleSubmit(plate: string) {
+    setError(null)
+    setVehicleLoading(true)
+    try {
+      const result = await consultarVehiculos({ placa: plate })
+      setVehicleResult(result)
+    } catch (requestError) {
+      setError(requestError instanceof ApiRequestError
+        ? { stage: 'vehicle', message: requestError.message, requestId: requestError.requestId }
+        : { stage: 'vehicle', message: 'No pudimos completar la consulta. Inténtalo nuevamente.' })
+    } finally {
+      setVehicleLoading(false)
+    }
+  }
+
   function startNewConsultation() {
     setTaxpayerResult(null)
+    setVehicleResult(null)
     setError(null)
   }
 
@@ -86,8 +121,8 @@ function App() {
             <span className="step-number">{taxpayerResult ? '✓' : '01'}</span>
             <span><strong>Contribuyente</strong><small>Consulta SRI</small></span>
           </li>
-          <li className={taxpayerResult ? 'step step--current' : 'step step--pending'} aria-current={taxpayerResult ? 'step' : undefined}>
-            <span className="step-number">02</span>
+          <li className={vehicleResult ? 'step step--complete' : taxpayerResult ? 'step step--current' : 'step step--pending'} aria-current={taxpayerResult && !vehicleResult ? 'step' : undefined}>
+            <span className="step-number">{vehicleResult ? '✓' : '02'}</span>
             <span><strong>Vehículo</strong><small>{taxpayerResult ? 'Consulta SRI' : 'Después de validar'}</small></span>
           </li>
           <li className="step step--pending">
@@ -109,16 +144,7 @@ function App() {
               <span className="source-chip"><span /> SRI</span>
             </div>
 
-            {error && (
-              <div className="feedback feedback--error" role="alert">
-                <span className="feedback-icon" aria-hidden="true">!</span>
-                <div>
-                  <strong>No se pudo completar la consulta</strong>
-                  <p>{error.message}</p>
-                  {error.requestId && <small>Referencia de solicitud: <code>{error.requestId}</code></small>}
-                </div>
-              </div>
-            )}
+          {error?.stage === 'taxpayer' && <ErrorNotice error={error} />}
 
             {taxpayerResult ? (
               <div className="result-view" role="region" aria-label="Resultado de contribuyente">
@@ -148,16 +174,72 @@ function App() {
             )}
           </section>
 
-          <section className={`next-step-card${taxpayerResult ? ' next-step-card--ready' : ''}`} aria-labelledby="vehicle-preview-title">
-            <span className="next-step-card__number">02</span>
-            <div>
-              <h2 id="vehicle-preview-title">Consulta de vehículo</h2>
-              <p>{taxpayerResult
-                ? 'La consulta vehicular se habilitará en el siguiente paso.'
-                : 'Primero completa la consulta de contribuyente para continuar.'}</p>
-            </div>
-            <span className="next-step-arrow" aria-hidden="true">→</span>
-          </section>
+          {taxpayerResult && (
+            <section className="panel vehicle-panel" aria-labelledby="vehicle-title">
+              <div className="panel-heading">
+                <div>
+                  <span className="section-index">ETAPA 02</span>
+                  <h2 id="vehicle-title">Consulta de vehículo</h2>
+                  <p>Busca información disponible en el SRI mediante la placa.</p>
+                </div>
+                <span className="source-chip"><span /> SRI</span>
+              </div>
+
+              {error?.stage === 'vehicle' && <ErrorNotice error={error} />}
+
+              {vehicleResult ? (
+                <div className="vehicle-results" role="region" aria-label="Resultado de vehículos">
+                  {vehicleResult.data.length === 0 ? (
+                    <div className="feedback feedback--info" role="status">
+                      <span className="feedback-info-icon" aria-hidden="true">i</span>
+                      <div>
+                        <strong>No se recibió información vehicular.</strong>
+                        <p>Esta respuesta no confirma por sí sola que el vehículo no exista.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    vehicleResult.data.map((vehicle, index) => (
+                      <article className="vehicle-result-card" key={`${vehicleResult.meta.requestId}-${index}`}>
+                        <div className="vehicle-result-card__heading">
+                          <span className="result-check" aria-hidden="true">✓</span>
+                          <div>
+                            <span>Resultado {vehicleResult.data.length > 1 ? `${index + 1} de ${vehicleResult.data.length}` : 'SRI'}</span>
+                            <h3>{typeof vehicle.camposSRI.numeroPlaca === 'string' && vehicle.camposSRI.numeroPlaca
+                              ? `Vehículo ${vehicle.camposSRI.numeroPlaca}`
+                              : `Vehículo ${index + 1}`}</h3>
+                          </div>
+                        </div>
+                        <FieldList fields={vehicle.camposSRI} />
+                      </article>
+                    ))
+                  )}
+                  <div className="result-meta">
+                    <span>Consultado el {formatRetrievedAt(vehicleResult.meta.retrievedAt)}</span>
+                    <span>Referencia <code>{vehicleResult.meta.requestId}</code></span>
+                  </div>
+                  <button className="button button--quiet" onClick={() => {
+                    setVehicleResult(null)
+                    setError(null)
+                  }} type="button">
+                    Consultar otra placa
+                  </button>
+                </div>
+              ) : (
+                <VehicleForm isLoading={vehicleLoading} onSubmit={handleVehicleSubmit} />
+              )}
+            </section>
+          )}
+
+          {!taxpayerResult && (
+            <section className="next-step-card" aria-labelledby="vehicle-preview-title">
+              <span className="next-step-card__number">02</span>
+              <div>
+                <h2 id="vehicle-preview-title">Consulta de vehículo</h2>
+                <p>Primero completa la consulta de contribuyente para continuar.</p>
+              </div>
+              <span className="next-step-arrow" aria-hidden="true">→</span>
+            </section>
+          )}
         </div>
 
         <aside className="side-column">

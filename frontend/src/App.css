@@ -365,6 +365,10 @@
   gap: 15px;
 }
 
+.form-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .form-field {
   display: grid;
   align-content: start;
@@ -510,6 +514,25 @@
   background: #fff7f4;
 }
 
+.feedback--info {
+  border-color: #d5e3e3;
+  color: #365966;
+  background: #f4f9f8;
+}
+
+.feedback-info-icon {
+  display: grid;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #bfd5d4;
+  border-radius: 50%;
+  color: #276671;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .feedback-icon {
   display: grid;
   width: 21px;
@@ -582,6 +605,42 @@
 .result-meta {
   color: #71878b;
   font-size: 0.68rem;
+}
+
+.vehicle-results {
+  display: grid;
+  gap: 14px;
+}
+
+.vehicle-result-card {
+  padding: 15px;
+  border: 1px solid #e2ebeb;
+  border-radius: 12px;
+  background: #fcfefd;
+}
+
+.vehicle-result-card__heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.vehicle-result-card__heading .result-check {
+  width: 27px;
+  height: 27px;
+  font-size: 0.7rem;
+}
+
+.vehicle-result-card__heading span:not(.result-check) {
+  color: #71878b;
+  font-size: 0.65rem;
+}
+
+.vehicle-result-card__heading h3 {
+  margin: 2px 0 0;
+  color: #294b59;
+  font-size: 0.82rem;
 }
 
 .result-banner__copy strong {
