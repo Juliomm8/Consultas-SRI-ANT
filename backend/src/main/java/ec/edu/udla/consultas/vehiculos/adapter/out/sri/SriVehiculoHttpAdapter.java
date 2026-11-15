@@ -8,6 +8,7 @@ import ec.edu.udla.consultas.vehiculos.domain.ValorCampoVehiculo;
 import ec.edu.udla.consultas.vehiculos.domain.Vehiculo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -23,15 +24,14 @@ import java.util.Objects;
 @Component
 public class SriVehiculoHttpAdapter implements VehiculoConsultaPort {
 
-    private static final URI VEHICLE_ENDPOINT = URI.create(
-            "https://srienlinea.sri.gob.ec/sri-matriculacion-vehicular-recaudacion-servicio-internet/rest/BaseVehiculo/obtenerPorNumeroPlacaOPorNumeroCampvOPorNumeroCpn");
-
     private final RestClient restClient;
     private final URI vehicleEndpoint;
 
     @Autowired
-    public SriVehiculoHttpAdapter(@Qualifier("sriRestClient") RestClient restClient) {
-        this(restClient, VEHICLE_ENDPOINT);
+    public SriVehiculoHttpAdapter(
+            @Qualifier("sriRestClient") RestClient restClient,
+            @Value("${integrations.sri.vehicle-url}") String vehicleEndpoint) {
+        this(restClient, URI.create(vehicleEndpoint));
     }
 
     SriVehiculoHttpAdapter(RestClient restClient, URI vehicleEndpoint) {
@@ -51,8 +51,11 @@ public class SriVehiculoHttpAdapter implements VehiculoConsultaPort {
                 .buildAndExpand(identificador)
                 .toUri();
 
-        JsonNode response = SriResponseSupport.getJson(restClient, requestUri);
+        JsonNode response = SriResponseSupport.getJson(
+                restClient, requestUri, SriResponseSupport.Operation.VEHICLE_LOOKUP);
         if (!response.isObject()) {
+            SriResponseSupport.logUnexpectedStructure(
+                    SriResponseSupport.Operation.VEHICLE_LOOKUP, "expected_object", response);
             throw SriIntegrationException.invalidResponse();
         }
 
@@ -61,12 +64,16 @@ public class SriVehiculoHttpAdapter implements VehiculoConsultaPort {
             return List.of(mapVehicle(response));
         }
         if (!data.isArray()) {
+            SriResponseSupport.logUnexpectedStructure(
+                    SriResponseSupport.Operation.VEHICLE_LOOKUP, "expected_data_array", data);
             throw SriIntegrationException.invalidResponse();
         }
 
         List<Vehiculo> vehicles = new ArrayList<>(data.size());
         for (JsonNode item : data) {
             if (!item.isObject()) {
+                SriResponseSupport.logUnexpectedStructure(
+                        SriResponseSupport.Operation.VEHICLE_LOOKUP, "expected_vehicle_object", item);
                 throw SriIntegrationException.invalidResponse();
             }
             vehicles.add(mapVehicle(item));
@@ -84,6 +91,8 @@ public class SriVehiculoHttpAdapter implements VehiculoConsultaPort {
         });
         ValorCampoVehiculo vehicleCode = attributes.get("codigoVehiculo");
         if (vehicleCode == null || vehicleCode.tipoDato() == ValorCampoVehiculo.TipoDato.NULO) {
+            SriResponseSupport.logUnexpectedStructure(
+                    SriResponseSupport.Operation.VEHICLE_LOOKUP, "required_vehicle_code_missing", item);
             throw SriIntegrationException.invalidResponse();
         }
         return new Vehiculo(attributes);

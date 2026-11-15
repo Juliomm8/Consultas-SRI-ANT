@@ -6,14 +6,19 @@ import ec.edu.udla.consultas.contribuyentes.domain.ValorCampoContribuyente;
 import ec.edu.udla.consultas.shared.integration.sri.SriIntegrationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
-import java.net.URI;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,10 +31,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withException;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withNoContent;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+@ExtendWith(OutputCaptureExtension.class)
 class SriContribuyenteHttpAdapterTests {
 
     private static final String TEST_RUC = "1234567890123";
@@ -79,6 +86,141 @@ class SriContribuyenteHttpAdapterTests {
         assertTrue(result.isPresent());
         assertEquals(TEST_RUC, result.orElseThrow().ruc().value());
         assertEquals(TipoPersona.NATURAL, result.orElseThrow().tipoPersona());
+        server.verify();
+    }
+
+    @Test
+    void mapsTheObservedSingleRecordArrayAndPreservesItsFields() {
+        expectPositiveExistenceAndDetails("""
+                [{
+                  "numeroRuc": "%s",
+                  "razonSocial": "SYNTHETIC_MATCHED_NAME",
+                  "tipoContribuyente": "PERSONA NATURAL",
+                  "categoria": 7
+                }]
+                """.formatted(TEST_RUC));
+
+        var taxpayer = adapter.consultarPor(new Ruc(TEST_RUC)).orElseThrow();
+
+        assertEquals(TipoPersona.NATURAL, taxpayer.tipoPersona());
+        assertEquals(TEST_RUC, taxpayer.ruc().value());
+        assertEquals("SYNTHETIC_MATCHED_NAME", taxpayer.datosSRI().get("razonSocial").valor());
+        assertEquals(ValorCampoContribuyente.TipoDato.NUMERO,
+                taxpayer.datosSRI().get("categoria").tipoDato());
+        server.verify();
+    }
+
+    @Test
+    void selectsTheMatchingRucWhenTheDetailsArrayContainsSeveralRecords() {
+        expectPositiveExistenceAndDetails("""
+                [
+                  {"numeroRuc":"9999999999999","razonSocial":"SYNTHETIC_OTHER_A","tipoContribuyente":"OTHER"},
+                  {"numeroRuc":"%s","razonSocial":"SYNTHETIC_MATCHED_RECORD","tipoContribuyente":"PERSONA NATURAL"},
+                  {"numeroRuc":"1111111111111","razonSocial":"SYNTHETIC_OTHER_B","tipoContribuyente":"OTHER"}
+                ]
+                """.formatted(TEST_RUC));
+
+        var taxpayer = adapter.consultarPor(new Ruc(TEST_RUC)).orElseThrow();
+
+        assertEquals(TEST_RUC, taxpayer.ruc().value());
+        assertEquals("SYNTHETIC_MATCHED_RECORD", taxpayer.datosSRI().get("razonSocial").valor());
+        assertEquals(TipoPersona.NATURAL, taxpayer.tipoPersona());
+        server.verify();
+    }
+
+    @Test
+    void keepsUnknownPersonTypeUndeterminedForTheMatchingArrayRecord() {
+        expectPositiveExistenceAndDetails("""
+                [{"numeroRuc":"%s","tipoContribuyente":"UNCONFIRMED_SYNTHETIC_TYPE"}]
+                """.formatted(TEST_RUC));
+
+        var taxpayer = adapter.consultarPor(new Ruc(TEST_RUC)).orElseThrow();
+
+        assertEquals(TipoPersona.NO_DETERMINADA, taxpayer.tipoPersona());
+        server.verify();
+    }
+
+    @Test
+    void rejectsAnEmptyDetailsArrayInsteadOfTreatingItAsNotFound() {
+        expectPositiveExistenceAndDetails("[]");
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.INVALID_RESPONSE, exception.kind());
+        assertFalse(exception.getMessage().contains(TEST_RUC));
+        server.verify();
+    }
+
+    @Test
+    void rejectsAnArrayWithoutAMatchingRucAndDoesNotLogRucOrBody(CapturedOutput output) {
+        String syntheticBody = "[{\"numeroRuc\":\"9999999999999\",\"razonSocial\":\"SYNTHETIC_PRIVATE_BODY\"}]";
+        expectPositiveExistenceAndDetails(syntheticBody);
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.INVALID_RESPONSE, exception.kind());
+        assertFalse(exception.getMessage().contains(TEST_RUC));
+        assertTrue(output.toString().contains("no_record_matches_requested_identifier"));
+        assertFalse(output.toString().contains(TEST_RUC));
+        assertFalse(output.toString().contains("SYNTHETIC_PRIVATE_BODY"));
+        server.verify();
+    }
+
+    @Test
+    void rejectsNullElementsInTheDetailsArray() {
+        expectPositiveExistenceAndDetails("[null]");
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.INVALID_RESPONSE, exception.kind());
+        server.verify();
+    }
+
+    @Test
+    void rejectsUnexpectedElementTypesInTheDetailsArray() {
+        expectPositiveExistenceAndDetails("[42]");
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.INVALID_RESPONSE, exception.kind());
+        server.verify();
+    }
+
+    @Test
+    void rejectsAnArrayRecordWithAnUnexpectedIdentifierJsonType() {
+        expectPositiveExistenceAndDetails(
+                "[{\"numeroRuc\":[],\"tipoContribuyente\":\"PERSONA NATURAL\"}]");
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.INVALID_RESPONSE, exception.kind());
+        server.verify();
+    }
+
+    @Test
+    void rejectsMultipleArrayRecordsMatchingTheRequestedRuc() {
+        expectPositiveExistenceAndDetails("""
+                [
+                  {"numeroRuc":"%s","tipoContribuyente":"PERSONA NATURAL"},
+                  {"numeroRuc":"%s","tipoContribuyente":"PERSONA NATURAL"}
+                ]
+                """.formatted(TEST_RUC, TEST_RUC));
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.INVALID_RESPONSE, exception.kind());
         server.verify();
     }
 
@@ -232,21 +374,117 @@ class SriContribuyenteHttpAdapterTests {
     }
 
     @Test
-    void mapsExternalServerErrorsWithoutExposingTheBodyOrIdentifier() {
+    void mapsExternalGatewayErrorsWithoutExposingTheBodyOrIdentifier() {
+        List<HttpStatus> statuses = List.of(
+                HttpStatus.BAD_GATEWAY,
+                HttpStatus.SERVICE_UNAVAILABLE,
+                HttpStatus.GATEWAY_TIMEOUT);
+        for (HttpStatus status : statuses) {
+            String syntheticBody = "synthetic-sensitive-body-" + status.value();
+            server.expect(requestTo("https://sri.test/existence?numeroRuc=" + TEST_RUC))
+                    .andRespond(withStatus(status)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(syntheticBody));
+        }
+
+        for (HttpStatus status : statuses) {
+            String syntheticBody = "synthetic-sensitive-body-" + status.value();
+            SriIntegrationException exception = assertThrows(
+                    SriIntegrationException.class,
+                    () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+            assertEquals(SriIntegrationException.Kind.HTTP_ERROR, exception.kind());
+            assertEquals(status.value(), exception.upstreamStatus());
+            assertNull(exception.getCause());
+            assertFalse(exception.getMessage().contains(TEST_RUC));
+            assertFalse(exception.getMessage().contains(syntheticBody));
+        }
+        server.verify();
+    }
+
+    @Test
+    void treatsHttp200WithAnEmptyBodyAsAnInvalidResponse() {
         server.expect(requestTo("https://sri.test/existence?numeroRuc=" + TEST_RUC))
-                .andRespond(withStatus(HttpStatus.BAD_GATEWAY)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"detail\":\"synthetic-sensitive-body\"}"));
+                .andRespond(withSuccess("", MediaType.APPLICATION_JSON));
 
         SriIntegrationException exception = assertThrows(
                 SriIntegrationException.class,
                 () -> adapter.consultarPor(new Ruc(TEST_RUC)));
 
-        assertEquals(SriIntegrationException.Kind.HTTP_ERROR, exception.kind());
-        assertEquals(502, exception.upstreamStatus());
+        assertEquals(SriIntegrationException.Kind.INVALID_RESPONSE, exception.kind());
+        assertFalse(exception.getMessage().contains(TEST_RUC));
+        server.verify();
+    }
+
+    @Test
+    void rejectsAnArrayRecordWithoutRuc() {
+        expectPositiveExistenceAndDetails("[{}]");
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.INVALID_RESPONSE, exception.kind());
+        assertFalse(exception.getMessage().contains(TEST_RUC));
+        server.verify();
+    }
+
+    @Test
+    void rejectsPrimitiveDetailsRootTypes() {
+        expectPositiveExistenceAndDetails("true");
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.INVALID_RESPONSE, exception.kind());
+        assertFalse(exception.getMessage().contains(TEST_RUC));
+        server.verify();
+    }
+
+    @Test
+    void rejectsMalformedJsonInTheDetailsResponseWithoutRetainingItsBody() {
+        String syntheticBody = "[{malformed SYNTHETIC_PRIVATE_BODY";
+        expectPositiveExistenceAndDetails(syntheticBody);
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.INVALID_RESPONSE, exception.kind());
         assertNull(exception.getCause());
         assertFalse(exception.getMessage().contains(TEST_RUC));
-        assertFalse(exception.getMessage().contains("synthetic-sensitive-body"));
+        assertFalse(exception.getMessage().contains("SYNTHETIC_PRIVATE_BODY"));
+        server.verify();
+    }
+
+    @Test
+    void classifiesTimeoutWithoutRetainingTheClientExceptionOrIdentifier() {
+        server.expect(requestTo("https://sri.test/existence?numeroRuc=" + TEST_RUC))
+                .andRespond(withException(new SocketTimeoutException("synthetic timeout " + TEST_RUC)));
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.TIMEOUT, exception.kind());
+        assertNull(exception.getCause());
+        assertFalse(exception.getMessage().contains(TEST_RUC));
+        server.verify();
+    }
+
+    @Test
+    void classifiesConnectionFailureWithoutRetainingTheClientExceptionOrIdentifier() {
+        server.expect(requestTo("https://sri.test/existence?numeroRuc=" + TEST_RUC))
+                .andRespond(withException(new IOException("synthetic connection failure " + TEST_RUC)));
+
+        SriIntegrationException exception = assertThrows(
+                SriIntegrationException.class,
+                () -> adapter.consultarPor(new Ruc(TEST_RUC)));
+
+        assertEquals(SriIntegrationException.Kind.UNAVAILABLE, exception.kind());
+        assertNull(exception.getCause());
+        assertFalse(exception.getMessage().contains(TEST_RUC));
         server.verify();
     }
 
@@ -263,6 +501,15 @@ class SriContribuyenteHttpAdapterTests {
         assertTrue(result.isPresent());
         assertEquals(TipoPersona.NO_DETERMINADA, result.orElseThrow().tipoPersona());
         server.verify();
+    }
+
+    private void expectPositiveExistenceAndDetails(String detailsResponse) {
+        server.expect(requestTo("https://sri.test/existence?numeroRuc=" + TEST_RUC))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("true", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://sri.test/details?ruc=" + TEST_RUC))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(detailsResponse, MediaType.APPLICATION_JSON));
     }
 
     @Test
