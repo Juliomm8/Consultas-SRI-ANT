@@ -36,7 +36,7 @@ $env:ANT_SIMULATION_SCENARIO = 'SUCCESS'
 En otra terminal, inicia Vite enlazado a loopback y activa la vista explícitamente:
 
 ```powershell
-cd C:\Dev\Arquitectura\Consultas-SRI-ANT\frontend
+Set-Location .\frontend
 $env:VITE_ANT_DEMO = 'true'
 $env:VITE_API_PROXY_TARGET = 'http://127.0.0.1:8080'
 npm run dev -- --host 127.0.0.1
