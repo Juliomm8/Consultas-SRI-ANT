@@ -169,6 +169,86 @@ test('consulta contribuyente y vehículo recorre React, Vite, Spring Boot y el s
   expect(externalBrowserRequestObserved).toBe(false)
 })
 
+test('valida correo, RUC y placa en tiempo real antes de enviar los datos sintéticos', async ({ page }) => {
+  await page.goto('/')
+
+  const email = page.getByLabel(/correo electrónico/i)
+  const ruc = page.getByLabel(/^RUC/i)
+  const taxpayerSubmit = page.getByRole('button', { name: /consultar contribuyente/i })
+  const emailShell = email.locator('..')
+  const rucShell = ruc.locator('..')
+
+  await expect(taxpayerSubmit).toBeDisabled()
+  await expect(email).toHaveAttribute('aria-invalid', 'false')
+  await expect(ruc).toHaveAttribute('aria-invalid', 'false')
+  await expect(emailShell).not.toHaveAttribute('data-validation-state')
+  await expect(rucShell).not.toHaveAttribute('data-validation-state')
+
+  await email.fill('correo-invalido')
+  await ruc.fill('12345')
+  await expect(email).toHaveAttribute('aria-invalid', 'true')
+  await expect(email).toHaveAttribute('aria-describedby', 'taxpayer-email-error')
+  await expect(page.getByText(/por ejemplo nombre@dominio/i)).toBeVisible()
+  await expect(emailShell.locator('[data-validation-icon="x-circle"]')).toBeVisible()
+  await expect(ruc).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByText(/exactamente 13 dígitos ASCII/i)).toBeVisible()
+  await expect(rucShell.locator('[data-validation-icon="x-circle"]')).toBeVisible()
+  await expect(taxpayerSubmit).toBeDisabled()
+  expect(await readStubRequests()).toEqual([])
+
+  await ruc.fill('12345678901a')
+  await expect(ruc).toHaveAttribute('aria-invalid', 'true')
+  await expect(rucShell.locator('[data-validation-icon="x-circle"]')).toBeVisible()
+  await expect(taxpayerSubmit).toBeDisabled()
+
+  await email.fill(syntheticEmail)
+  await ruc.fill(syntheticSuccessRuc)
+  await expect(emailShell).toHaveAttribute('data-validation-state', 'valid')
+  await expect(emailShell.locator('[data-validation-icon="check-circle"]')).toBeVisible()
+  await expect(rucShell).toHaveAttribute('data-validation-state', 'valid')
+  await expect(rucShell.locator('[data-validation-icon="check-circle"]')).toBeVisible()
+  await expect(taxpayerSubmit).toBeEnabled()
+
+  const taxpayerResponsePromise = page.waitForResponse(response =>
+    new URL(response.url()).pathname === '/api/v1/contribuyentes/consultas'
+      && response.request().method() === 'POST')
+  await taxpayerSubmit.click()
+  expect((await taxpayerResponsePromise).status()).toBe(200)
+  await expect(page.getByRole('region', { name: 'Resultado de contribuyente' })).toBeVisible()
+
+  const plate = page.getByLabel(/^Placa/i)
+  const plateShell = plate.locator('..')
+  const vehicleSubmit = page.getByRole('button', { name: /consultar vehículo/i })
+  await expect(vehicleSubmit).toBeDisabled()
+  await plate.fill('E2E-1234')
+  await expect(plate).toHaveAttribute('aria-invalid', 'true')
+  await expect(plate).toHaveAttribute('aria-describedby', 'vehicle-plate-error')
+  await expect(page.getByText(/solo puede contener letras y números/i)).toBeVisible()
+  await expect(plateShell.locator('[data-validation-icon="x-circle"]')).toBeVisible()
+  await expect(vehicleSubmit).toBeDisabled()
+
+  await plate.fill(syntheticPlate)
+  await expect(plate).toHaveAttribute('aria-invalid', 'false')
+  await expect(plateShell).toHaveAttribute('data-validation-state', 'valid')
+  await expect(plateShell.locator('[data-validation-icon="check-circle"]')).toBeVisible()
+  await expect(vehicleSubmit).toBeEnabled()
+
+  const vehicleResponsePromise = page.waitForResponse(response =>
+    new URL(response.url()).pathname === '/api/v1/vehiculos/consultas'
+      && response.request().method() === 'POST')
+  await vehicleSubmit.click()
+  expect((await vehicleResponsePromise).status()).toBe(200)
+  await expect(page.getByRole('region', { name: 'Resultado de vehículos' })).toBeVisible()
+
+  expect(await readStubRequests()).toEqual([
+    { operation: 'taxpayer-existence', method: 'GET', parameterNames: ['numeroRuc'], status: 200 },
+    { operation: 'taxpayer-details', method: 'GET', parameterNames: ['ruc'], status: 200 },
+    { operation: 'vehicle-lookup', method: 'GET', parameterNames: ['numeroPlacaCampvCpn'], status: 200 },
+  ])
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length])).toEqual([0, 0])
+  expect(externalBrowserRequestObserved).toBe(false)
+})
+
 test('traduce un HTTP 503 del proveedor a un error seguro en la interfaz', async ({ page }) => {
   await page.goto('/')
   await enterTaxpayerDetails(page, syntheticProviderFailureRuc)
@@ -272,6 +352,8 @@ test('mantiene la portada usable y sin desbordamiento en los anchos objetivo', a
   await navigation.getByRole('link', { name: 'Estado ANT' }).click()
   await expect(page).toHaveURL(/#estado-ant$/)
   await expect(page.getByRole('heading', { name: /consulta de puntos de licencia/i })).toBeVisible()
+  await expect(page.getByRole('link', { name: /consultar el trámite oficial/i })).toHaveCount(0)
+  await expect(page.getByText(/enlace al trámite oficial externo está desactivado durante esta sesión local aislada/i)).toBeVisible()
   await captureRedesignEvidence(page, '09-estado-ant.png', page.locator('#estado-ant'))
   await page.getByRole('link', { name: 'Volver arriba' }).click()
   await expect(page).toHaveURL(/#inicio$/)

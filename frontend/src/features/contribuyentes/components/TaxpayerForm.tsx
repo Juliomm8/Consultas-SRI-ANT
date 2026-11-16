@@ -10,27 +10,25 @@ interface TaxpayerFormProps {
 export function TaxpayerForm({ disabled, isLoading, onSubmit }: TaxpayerFormProps) {
   const [email, setEmail] = useState('')
   const [ruc, setRuc] = useState('')
-  const [emailError, setEmailError] = useState('')
-  const [rucError, setRucError] = useState('')
+  const [emailTouched, setEmailTouched] = useState(false)
+  const [rucTouched, setRucTouched] = useState(false)
+
+  const emailError = emailTouched ? validateEmail(email) : ''
+  const rucError = rucTouched ? validateRuc(ruc) : ''
+  const emailValid = emailTouched && !emailError
+  const rucValid = rucTouched && !rucError
+  const formValid = !validateEmail(email) && !validateRuc(ruc)
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const nextEmailError = !email
-      ? 'El correo electrónico es obligatorio.'
-      : email.length > 254 || !/^[^\s@]+@[^\s@]+$/.test(email)
-        ? 'Ingresa un correo electrónico válido (máximo 254 caracteres).'
-        : ''
-    const nextRucError = /^[0-9]{13}$/.test(ruc)
-      ? ''
-      : 'El RUC debe contener exactamente 13 dígitos.'
-    setEmailError(nextEmailError)
-    setRucError(nextRucError)
+    setEmailTouched(true)
+    setRucTouched(true)
 
-    if (nextEmailError) {
+    if (validateEmail(email)) {
       window.requestAnimationFrame(() => document.getElementById('taxpayer-email')?.focus())
       return
     }
-    if (nextRucError) {
+    if (validateRuc(ruc)) {
       window.requestAnimationFrame(() => document.getElementById('taxpayer-ruc')?.focus())
       return
     }
@@ -42,7 +40,7 @@ export function TaxpayerForm({ disabled, isLoading, onSubmit }: TaxpayerFormProp
       <div className="form-grid">
         <label className="form-field" htmlFor="taxpayer-email">
           <span className="form-label"><span>Correo electrónico</span><span className="required-mark">Obligatorio</span></span>
-          <span className={`input-shell${emailError ? ' input-shell--error' : ''}`}>
+          <span className={`input-shell${emailError ? ' input-shell--error' : emailValid ? ' input-shell--valid' : ''}`} data-validation-state={emailTouched ? emailValid ? 'valid' : 'invalid' : undefined}>
             <PortalIcon name="mail" />
             <input
               autoComplete="email"
@@ -53,36 +51,40 @@ export function TaxpayerForm({ disabled, isLoading, onSubmit }: TaxpayerFormProp
               required
               onChange={(event) => {
                 setEmail(event.target.value)
-                setEmailError('')
+                setEmailTouched(true)
               }}
+              onBlur={() => setEmailTouched(true)}
               placeholder="nombre@ejemplo.com"
               type="email"
               value={email}
               aria-describedby={emailError ? 'taxpayer-email-error' : 'taxpayer-email-hint'}
               aria-invalid={Boolean(emailError)}
             />
+            {emailTouched && <span className={`input-shell__status${emailValid ? ' input-shell__status--valid' : ' input-shell__status--invalid'}`} data-validation-icon={emailValid ? 'check-circle' : 'x-circle'}>
+              <PortalIcon name={emailValid ? 'check-circle' : 'x-circle'} />
+            </span>}
           </span>
           {emailError
-            ? <span className="field-error" id="taxpayer-email-error" aria-live="polite">{emailError}</span>
+            ? <span className="field-error" id="taxpayer-email-error">{emailError}</span>
             : <span className="field-hint" id="taxpayer-email-hint">Se valida en esta aplicación; no se envía al SRI.</span>}
         </label>
 
         <label className="form-field" htmlFor="taxpayer-ruc">
           <span className="form-label"><span>RUC</span><span className="required-mark">Obligatorio</span></span>
-          <span className={`input-shell${rucError ? ' input-shell--error' : ''}`}>
+          <span className={`input-shell${rucError ? ' input-shell--error' : rucValid ? ' input-shell--valid' : ''}`} data-validation-state={rucTouched ? rucValid ? 'valid' : 'invalid' : undefined}>
             <PortalIcon name="id" />
             <input
               autoComplete="off"
               disabled={disabled || isLoading}
               id="taxpayer-ruc"
               inputMode="numeric"
-              maxLength={13}
               name="ruc"
               required
               onChange={(event) => {
                 setRuc(event.target.value)
-                setRucError('')
+                setRucTouched(true)
               }}
+              onBlur={() => setRucTouched(true)}
               pattern="[0-9]{13}"
               placeholder="13 dígitos"
               type="text"
@@ -90,15 +92,18 @@ export function TaxpayerForm({ disabled, isLoading, onSubmit }: TaxpayerFormProp
               aria-describedby={rucError ? 'taxpayer-ruc-error' : 'taxpayer-ruc-hint'}
               aria-invalid={Boolean(rucError)}
             />
+            {rucTouched && <span className={`input-shell__status${rucValid ? ' input-shell__status--valid' : ' input-shell__status--invalid'}`} data-validation-icon={rucValid ? 'check-circle' : 'x-circle'}>
+              <PortalIcon name={rucValid ? 'check-circle' : 'x-circle'} />
+            </span>}
           </span>
           {rucError
-            ? <span className="field-error" id="taxpayer-ruc-error" aria-live="polite">{rucError}</span>
+            ? <span className="field-error" id="taxpayer-ruc-error">{rucError}</span>
             : <span className="field-hint" id="taxpayer-ruc-hint">Formato estructural de 13 dígitos; el SRI confirma existencia.</span>}
         </label>
       </div>
       <div className="form-footer">
         <p className="privacy-note"><PortalIcon name="shield" /> La consulta usa el servicio SRI disponible.</p>
-        <button className="button button--primary" disabled={disabled || isLoading} type="submit">
+        <button className="button button--primary" disabled={disabled || isLoading || !formValid} type="submit">
           {isLoading
             ? <><span className="spinner" aria-hidden="true" /> Consultando…</>
             : <>Consultar contribuyente <PortalIcon name="arrow-right" />
@@ -107,4 +112,18 @@ export function TaxpayerForm({ disabled, isLoading, onSubmit }: TaxpayerFormProp
       </div>
     </form>
   )
+}
+
+function validateEmail(value: string): string {
+  if (!value) return 'El correo electrónico es obligatorio.'
+  if (value.length > 254 || !/^[^\s@]+@[^\s@]+$/.test(value)) {
+    return 'Ingresa un correo electrónico válido, por ejemplo nombre@dominio (máximo 254 caracteres).'
+  }
+  return ''
+}
+
+function validateRuc(value: string): string {
+  return /^[0-9]{13}$/.test(value)
+    ? ''
+    : 'El RUC debe contener exactamente 13 dígitos ASCII, sin letras ni espacios.'
 }
