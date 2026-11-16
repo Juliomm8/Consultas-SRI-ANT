@@ -1,0 +1,6 @@
+Started task-owned Redis container from redis:7.4-alpine with host binding 127.0.0.1 and an ephemeral port.
+Redis runtime version verified through INFO server: 7.4.12.
+Published endpoint: 127.0.0.1:60933.
+JUnit result: tests=2; failures=0; errors=0; skipped=0.
+Stopped task-owned container; --rm removed it after stop.
+Verification: task-owned container is absent from docker ps -a.

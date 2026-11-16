@@ -1,0 +1,26 @@
+{
+  "runId": "20261115-204859",
+  "externalProvidersCalled": false,
+  "redis": {
+    "version": "7.4.12",
+    "bindAddress": "127.0.0.1",
+    "junitTests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "containerRemoved": true
+  },
+  "frontend": {
+    "vitestTestsPerRun": 33,
+    "vitestFailures": 0,
+    "lint": "passed",
+    "build": "passed",
+    "productionDemoMarkersFound": false,
+    "sriPlaywrightTests": 3,
+    "sriPlaywrightFailures": 0,
+    "antPlaywrightTests": 7,
+    "antPlaywrightFailures": 0,
+    "antRedisPlaywrightRerun": false
+  },
+  "fixturePolicy": "Synthetic fixtures only; cédula values are absent from persisted logs and reports."
+}

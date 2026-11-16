@@ -1,0 +1,9 @@
+E2E test: real Redis backs simulated success and timeout recovery through React and Spring Boot
+Playwright expected=1; unexpected=0; skipped=0; flaky=0
+Scenario 1: HTTP 200 source=SIMULATED, originSource=SIMULATED, stale=false; totalPuntos and fetchedAt present.
+Redis: simulated result written to the isolated simulation cache namespace.
+Scenario 2: simulator timeout; HTTP 200 recovered from Redis with source=CACHE, originSource=SIMULATED, stale=true.
+Recovery assertions: totalPuntos and original fetchedAt preserved; warning identifies SIMULATED provenance.
+Privacy assertions: synthetic input cleared; no identifier in URL or browser console; no local/session storage or cookies.
+Network guard: no external hosts requested.
+Overall result: PASS

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites name="vitest tests" tests="33" failures="0" errors="0" time="15.7722506">
+  <testsuite name="src/App.test.tsx" timestamp="2026-11-16T01:56:03.422Z" tests="21" failures="0" errors="0" skipped="0" time="11.9680318">
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; muestra el estado ANT pendiente y el enlace oficial sin consultar servicios" time="0.0817932"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; valida email y RUC antes de enviar" time="0.4989694"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; envía el contrato real y presenta solo la clasificación natural confirmada" time="0.5941333"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; muestra el estado de carga mientras espera al backend" time="0.6481172"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; no presenta una clasificación indeterminada como persona natural" time="0.6400401"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; presenta errores 422 con mensaje seguro y requestId" time="0.6107868"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; traduce HTTP 502 y descarta el cuerpo externo" time="0.637753"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; traduce la falla de conexión sin imprimir detalles ni guardar datos" time="0.6678535"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; valida la placa antes de llamar al endpoint vehicular" time="0.8671742"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; presenta todos los vehículos y omite campos nulos" time="0.8732272"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; describe una lista vehicular vacía sin afirmar que el vehículo no existe" time="0.7970707"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; maneja errores vehiculares 503 sin exponer la placa" time="0.8071174"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; mapea HTTP 400 con mensajes controlados" time="0.5427128"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; mapea HTTP 404 con mensajes controlados" time="0.613057"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; mapea HTTP 422 con mensajes controlados" time="0.6183611"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; mapea HTTP 504 con mensajes controlados" time="0.5883392"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; mapea HTTP 500 con mensajes controlados" time="0.6207857"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; distingue un HTTP 404 sin código contractual de NOT_FOUND" time="0.609888"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; usa el encabezado X-Request-Id como referencia segura cuando el cuerpo no tiene uno válido" time="0.6352269"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; cancela una solicitud que supera el timeout del cliente" time="0.0031881"></testcase>
+    <testcase classname="src/App.test.tsx" name="Portal de consultas &gt; usa solo las rutas del backend y nunca solicita identificación para ANT" time="0.0111245"></testcase>
+  </testsuite>
+  <testsuite name="src/features/ant/demo/AntPointsDemo.test.tsx" timestamp="2026-11-16T01:56:03.427Z" tests="11" failures="0" errors="0" skipped="0" time="3.8023229">
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; mantiene visible el aviso de simulación y no consulta al cargar" time="0.037197"></testcase>
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; muestra el resultado simulado, la fecha y no persiste la identificación" time="0.3059443"></testcase>
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; muestra el estado de carga mientras espera al backend local" time="0.3101336"></testcase>
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; distingue un saldo cero válido de una respuesta sin información" time="0.1857075"></testcase>
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; muestra ausencia de información sin inventar un saldo" time="0.296071"></testcase>
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; muestra indisponibilidad controlada y requestId sin contenido del proveedor" time="0.3089366"></testcase>
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; distingue timeout del proveedor y timeout del cliente" time="0.6361841"></testcase>
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; muestra CACHE como dato antiguo y mantiene el aviso de simulación local" time="0.2983845"></testcase>
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; no expone cuerpos externos ni acepta una fuente o metadata incompatibles" time="0.616424"></testcase>
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; rechaza CACHE sin procedencia simulada explícita y combinaciones incoherentes" time="0.6188559"></testcase>
+    <testcase classname="src/features/ant/demo/AntPointsDemo.test.tsx" name="demostración local de puntos ANT &gt; rechaza formato inválido sin enviar ni conservar el dato" time="0.1874439"></testcase>
+  </testsuite>
+  <testsuite name="src/features/ant/demo/demoAccess.test.ts" timestamp="2026-11-16T01:56:03.429Z" tests="1" failures="0" errors="0" skipped="0" time="0.0018959">
+    <testcase classname="src/features/ant/demo/demoAccess.test.ts" name="disponibilidad de la demo ANT &gt; requiere desarrollo y la bandera explícita true" time="0.0010678"></testcase>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,4 @@
+Image: redis:7.4-alpine
+Redis server version: 7.4.12
+Binding: 127.0.0.1 only, ephemeral host port
+Test runner verifies this version from INFO server before starting the application.

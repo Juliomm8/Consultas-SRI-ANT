@@ -1,0 +1,4 @@
+Container created by test runner with --rm and published only to 127.0.0.1 on an ephemeral host port.
+Runner cleanup calls docker stop in finally.
+Post-run container check: no newly created matching container remains
+New matching containers remaining: 0

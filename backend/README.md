@@ -84,8 +84,10 @@ docker stop consultas-sri-ant-redis-local
 
 Si el puerto local 6379 está ocupado, cambia el puerto publicado y el valor de
 `redis.integration.port`. La prueba usa una cédula centinela sintética,
-comprueba escritura/lectura, `fetchedAt`, `source=CACHE` y TTL, y elimina su
-propia clave al terminar. No llama a ANT. El contenedor se debe detener después;
+comprueba el guardado ANT existente y el recorrido éxito → timeout → recuperación
+del caso de uso simulado contra Redis, incluyendo `fetchedAt`, procedencia,
+namespace, contenido mínimo y TTL. El test elimina sus propias claves al
+terminar. No llama a ANT. El contenedor se debe detener después;
 la ejecución normal no inicia Docker ni Redis.
 
 ## Simulación local de puntos ANT
@@ -102,9 +104,19 @@ Desde `backend/`, en PowerShell, inicia el escenario exitoso:
 
 ```powershell
 $env:SPRING_PROFILES_ACTIVE = 'local-simulation'
-$env:ANT_SIMULATION_SCENARIO = 'SUCCESS'
+$env:ANT_SIMULATION_SCENARIO = 'SUCCESS_THEN_TIMEOUT'
 .\mvnw.cmd spring-boot:run
 ```
+
+Para probar específicamente la recuperación desde Redis con el simulador,
+inicia Redis 7.4 enlazado a loopback y define `REDIS_CACHE_ENABLED=true`,
+`REDIS_HOST`, `REDIS_PORT`, un `REDIS_CACHE_TTL` positivo y un
+`REDIS_CACHE_HMAC_SECRET` de al menos 32 bytes en memoria de la sesión. No
+guardes ese secreto en archivos. La primera consulta responde `SIMULATED` y se
+guarda en `consultas-sri-ant:ant-points:simulation:v1:`; la segunda produce
+timeout y recupera el mismo total y fecha como `source=CACHE`,
+`originSource=SIMULATED` y `stale=true`. Las instrucciones completas están en
+[`docs/pruebas/demo-ant-local.md`](../docs/pruebas/demo-ant-local.md).
 
 El endpoint acepta solamente una cédula estructural de 10 dígitos ASCII. Para
 probar con el centinela sintético ya usado por las pruebas locales:
@@ -119,8 +131,9 @@ Invoke-RestMethod `
 ```
 
 La respuesta sintética contiene únicamente `data.totalPuntos` y metadata con
-`requestId`, `source`, `retrievedAt`, `fetchedAt`, `stale` y `warning`. Su fuente
-es `SIMULATED` y el aviso indica que no es información oficial de ANT. El
+`requestId`, `source`, `originSource`, `retrievedAt`, `fetchedAt`, `stale` y
+`warning`. En la primera consulta `source=SIMULATED`, `originSource=SIMULATED` y
+`stale=false`. El aviso indica que no es información oficial de ANT. El
 centinela sirve solo para desarrollo; no ingreses identificaciones reales en
 pruebas locales compartidas.
 
@@ -135,17 +148,31 @@ Los escenarios se eligen por configuración, no por parámetros HTTP:
 | `UNAVAILABLE` | Simula indisponibilidad (`503`); no realiza red. |
 | `INVALID_RESPONSE` | Simula una respuesta no utilizable (`502`) sin generar ni guardar un cuerpo del proveedor. |
 | `RECOVERY` | La primera invocación simula indisponibilidad y las siguientes devuelven un resultado sintético. |
+| `SUCCESS_THEN_TIMEOUT` | La primera invocación devuelve el resultado sintético y lo guarda solo en la caché local de simulación; las siguientes lanzan timeout para probar el fallback. No espera ni realiza solicitudes de red. |
 
 El `CircuitBreaker` `antPoints` envuelve solo el puerto saliente activo en este
 perfil y cuenta únicamente `PuntosLicenciaProviderException`; la ausencia de
 información y errores de validación no se cuentan como fallos del proveedor.
 Esto prueba la frontera de resiliencia con un simulador y no protege una llamada
-real a ANT. El caso de uso intenta Redis únicamente tras un fallo técnico; una
-entrada válida se devuelve con `source=CACHE`, `stale=true` y su `fetchedAt`
-original. Los resultados `SIMULATED` nunca se escriben en Redis. En esta
-versión no existe un adaptador real que escriba resultados `ANT`, así que el
-fallback está probado mediante puertos falsos, no mediante una respuesta real
-del proveedor.
+real a ANT. Redis continúa desactivado por defecto. Fuera de `local-simulation`,
+el puerto Redis existente conserva el namespace
+`consultas-sri-ant:ant-points:v2:` y acepta solo resultados `ANT`. En el perfil
+`local-simulation`, con Redis habilitado explícitamente, se registra un puerto
+independiente que escribe únicamente `SIMULATED` bajo
+`consultas-sri-ant:ant-points:simulation:v1:`. Ambos usan HMAC-SHA-256; la
+identificación no aparece en la clave ni en el payload. El documento almacena
+solo `totalPuntos`, `fetchedAt` y la fuente de origen.
+
+Si el proveedor simulado falla después de un éxito, el caso de uso recupera ese
+resultado local y responde `source=CACHE`, `originSource=SIMULATED`,
+`stale=true`, conserva el `fetchedAt` original y avisa que no es información
+oficial y puede estar desactualizada. Una ausencia legítima de información no
+activa el fallback. La demo React acepta únicamente resultados frescos
+`SIMULATED` o resultados `CACHE` cuyo origen explícito sea `SIMULATED`.
+
+La integración ANT real sigue sin adaptador y no ha producido datos `ANT` en la
+aplicación. Este flujo demuestra Redis local con datos sintéticos, no una
+consulta real, ni una conexión a Redis Cloud.
 
 ## Endpoints implementados
 
@@ -153,9 +180,9 @@ del proveedor.
 |---|---|---|
 | `POST` | `/api/v1/contribuyentes/consultas` | Valida email y formato estructural del RUC; luego consulta SRI mediante el caso de uso. El email no se envía a SRI, no se almacena ni se devuelve. |
 | `POST` | `/api/v1/vehiculos/consultas` | Valida la placa y consulta SRI mediante el caso de uso. No comprueba titularidad del vehículo. |
-| `POST` | `/api/v1/licencias/puntos/consultas` | Solo con el perfil local `local-simulation`; devuelve exclusivamente el contrato normalizado con `source=SIMULATED` y no consulta ANT. |
+| `POST` | `/api/v1/licencias/puntos/consultas` | Solo con el perfil local `local-simulation`; devuelve `SIMULATED` en una consulta nueva o `CACHE` con `originSource=SIMULATED` al recuperar el resultado simulado desde el namespace Redis aislado. No consulta ANT. |
 
-Las respuestas SRI exitosas utilizan `{ "data": ..., "meta": { "requestId", "source", "retrievedAt" } }`, con `source=SRI`; `requestId` coincide con el encabezado `X-Request-Id`. La ruta de puntos local usa el esquema extendido documentado arriba y `source=SIMULATED`.
+Las respuestas SRI exitosas utilizan `{ "data": ..., "meta": { "requestId", "source", "retrievedAt" } }`, con `source=SRI`; `requestId` coincide con el encabezado `X-Request-Id`. La ruta de puntos local usa el esquema extendido documentado arriba. En él, `source` describe la respuesta actual (`SIMULATED` o `CACHE`) y `originSource` conserva la fuente original (`SIMULATED` en esta demostración).
 
 ### Ejemplos PowerShell con valores sintéticos
 
@@ -210,7 +237,7 @@ Invoke-RestMethod `
 - `shared/integration/sri`: cliente HTTP, timeouts y excepciones técnicas sanitizadas.
 - `puntos/domain` y `puntos/application`: cédula estructural, resultado normalizado, puertos y caso de uso con fallback.
 - `puntos/adapter/out/ant/simulation`: simulador local y decorator Circuit Breaker; no contiene cliente HTTP ANT.
-- `puntos/adapter/out/redis`: almacenamiento JSON tipado, TTL y claves HMAC-SHA-256; solo acepta resultados `ANT`.
+- `puntos/adapter/out/redis`: almacenamiento JSON tipado, TTL y claves HMAC-SHA-256; el adaptador ANT oficial y el adaptador simulado usan puertos y namespaces separados.
 - `puntos/adapter/in/rest`: endpoint de simulación habilitado solo en perfil local y enlazado a loopback.
 
 ## Pruebas
@@ -223,6 +250,14 @@ Ejecuta todas las pruebas y genera el JAR ejecutable:
 
 Las pruebas de adaptadores SRI usan `MockRestServiceServer`; las de controladores usan `MockMvc` y resultados sintéticos. También se prueban la simulación local, los estados del Circuit Breaker y el fallback mediante un puerto de caché falso. La prueba de salud inicia Spring Boot en un puerto local aleatorio. Las pruebas automatizadas no llaman servicios SRI ni ANT reales.
 
+En la ejecución reproducible del 16 de noviembre de 2026, `clean verify`
+ejecutó 165 pruebas ordinarias (0 fallos, errores u omitidas) y generó el JAR.
+Las dos pruebas optativas `RedisPuntosLicenciaCacheIntegrationIT` se ejecutaron
+por separado contra Redis 7.4.12 real en Docker enlazado a loopback; no forman
+parte del total Surefire de 165. Los [informes y logs sanitizados](../docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/backend/)
+registran ambos resultados. La recuperación cubierta utiliza `SIMULATED` y
+Redis local; no prueba el fallo de un proveedor ANT real.
+
 ## Límites actuales
 
 - Los adaptadores salientes SRI están configurados; la consulta de contribuyentes normaliza los formatos de detalles observados (objeto y arreglo). Una forma JSON no válida o ambigua se trata como error técnico y no como inexistencia.
@@ -230,7 +265,7 @@ Las pruebas de adaptadores SRI usan `MockRestServiceServer`; las de controladore
 - Consultar un vehículo no demuestra que pertenezca a un contribuyente.
 - No está confirmado el significado general de la respuesta SRI `data: []` para vehículos.
 - ANT no ha devuelto una respuesta funcional en el entorno de diagnóstico. La investigación no localizó documentación oficial pública de una API de consulta automática; el trámite oficial del certificado es un flujo web separado. El backend tiene un endpoint disponible solo en perfil local para devolver resultados `SIMULATED`; no hay cliente ni parser ANT.
-- El caso de uso conecta el fallback a `PuntosLicenciaCachePort` y el adaptador Redis guarda únicamente resultados normalizados de fuente `ANT`; el simulador no puede escribir resultados. Como no existe un adaptador real que produzca datos `ANT`, el fallback no está demostrado con el proveedor. `antPoints` protege el límite simulado local, no una llamada real.
+- El caso de uso separa el puerto de caché oficial (`ANT`) del puerto exclusivo de simulación (`SIMULATED`). Los namespaces HMAC son independientes; Redis permanece desactivado por defecto. El fallback de simulación se comprueba contra Redis 7.4 real mediante la prueba optativa y Playwright. No hay adaptador real que produzca datos `ANT`, por lo que el fallback de un proveedor oficial no se ha demostrado. `antPoints` protege el simulador, no una llamada real.
 - `ConsultarPuntosRequest` recibe `cedula` y valida solo 10 dígitos ASCII. No valida el dígito verificador ni la existencia de la persona y no deriva cédulas del RUC. El contrato normalizado es propio de la aplicación: `totalPuntos` entero y metadata de fuente/fecha/antigüedad; no se afirma que represente el HTML o JSON real de ANT. El requisito solicita puntos, mientras que la URL investigada `clp_grid_citaciones.jsp` identifica una vista de citaciones; no se ha confirmado que ambas consultas sean equivalentes. `ps_placa` no forma parte de la entrada actual y su función permanece desconocida.
 
 ## Diagnóstico y privacidad de logs

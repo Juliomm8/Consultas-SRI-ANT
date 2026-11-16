@@ -1,0 +1,5 @@
+
+> consultas-sri-ant-frontend@0.0.0 test
+> vitest run --reporter=junit --outputFile=[temporary output path omitted]
+
+JUNIT report written to [LOCAL_PATH_REDACTED]

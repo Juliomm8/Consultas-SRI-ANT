@@ -1,0 +1,4 @@
+Production bundle scan after npm run build with local demo flags unset:
+MODO DEMOSTRACIÓN: False
+Consultar escenario local: False
+ant-demo-cedula: False

@@ -1,0 +1,8 @@
+Redis runtime: 7.4.12, verified using INFO server
+Docker image tag: redis:7.4-alpine
+Network binding: loopback only (127.0.0.1, ephemeral host port)
+JUnit class: RedisPuntosLicenciaCacheIntegrationIT
+Tests: 2; failures: 0; errors: 0; skipped: 0
+Redis implementation: real local Docker Redis; not mocked
+Provider: synthetic SUCCESS_THEN_TIMEOUT simulator; no ANT network call
+Container: task-owned, stopped and removed after the test

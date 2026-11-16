@@ -1,0 +1,10 @@
+Execution date: 2026-11-16
+npm test: 33 passed (3 test files)
+npm run test: 33 passed (3 test files; separately executed same suite)
+npm run lint: passed
+npm run build: passed; standard production bundle scanned and the reviewed ANT demo markers were absent
+npm run test:e2e: 3 passed, 0 skipped/unexpected/flaky (React, Vite, Spring Boot, local SRI stub)
+npm run test:e2e:ant: 7 passed, 0 skipped/unexpected/flaky (local simulation, loopback; no Redis)
+npm run test:e2e:ant:redis: 1 passed, 0 skipped/unexpected/flaky (local simulation and Redis 7.4.12 in Docker on loopback)
+
+All browser tests used synthetic fixtures and local stubs. No real SRI or ANT requests were made. E2E JSON reports and sanitized console logs are in this folder. Screenshots are separated by test scenario; the Redis-backed SIMULATED and CACHE screenshots are in e2e-ant-redis/.

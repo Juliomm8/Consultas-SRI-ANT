@@ -1,0 +1,148 @@
+{
+  "config": {
+    "argv": [
+      "[LOCAL_PATH_REDACTED]",
+      "[LOCAL_PATH_REDACTED]",
+      "test",
+      "--config=e2e/ant-demo.redis.playwright.config.ts"
+    ],
+    "configFile": "[LOCAL_PATH_REDACTED]",
+    "rootDir": "[LOCAL_PATH_REDACTED]",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "[LOCAL_PATH_REDACTED]",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "[LOCAL_PATH_REDACTED]",
+        "testIgnore": [],
+        "testMatch": [
+          "**/ant-demo.redis.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "[LOCAL_PATH_REDACTED]",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "[LOCAL_PATH_REDACTED]",
+        "snapshotDir": "[LOCAL_PATH_REDACTED]",
+        "testIgnore": [],
+        "testMatch": "**/ant-demo.redis.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "htt[LOCAL_PATH_REDACTED]",
+          "browserName": "chromium",
+          "headless": true,
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "[LOCAL_PATH_REDACTED]"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "ant-demo.redis.spec.ts",
+      "file": "ant-demo.redis.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "real Redis backs simulated success and timeout recovery through React and Spring Boot",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 939,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-16T02:20:14.586Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "86ff16b55cf5f7aacc6b-1a2ad9343419296887eb",
+          "file": "ant-demo.redis.spec.ts",
+          "line": 29,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-16T02:20:14.280Z",
+    "duration": 1411.388,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

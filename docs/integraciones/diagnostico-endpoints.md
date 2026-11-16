@@ -105,8 +105,9 @@ El material obtenido no permite atribuir con certeza la causa interna.
   equivalentes.
 - No se confirmó el formulario real ni sus parámetros definitivos.
 - El backend define un esquema normalizado propio para la aplicación:
-  `data.totalPuntos` como entero y metadata `source`, `fetchedAt`, `stale` y
-  `warning` (además del `requestId` y `retrievedAt` del sobre HTTP). Esto no es
+  `data.totalPuntos` como entero y metadata `source`, `originSource`,
+  `fetchedAt`, `stale` y `warning` (además del `requestId` y `retrievedAt` del
+  sobre HTTP). Esto no es
   una reproducción del JSON ni del HTML real de ANT.
 - Se implementó un simulador local con respuestas marcadas `SIMULATED`; solo se
   activa mediante el perfil `local-simulation`, que enlaza el servidor a
@@ -115,10 +116,29 @@ El material obtenido no permite atribuir con certeza la causa interna.
 - No se implementó un parser ni un cliente HTTP ANT real.
 - El circuit breaker `antPoints` envuelve el puerto del simulador únicamente en
   ese perfil; todavía no protege una llamada real al proveedor.
-- El caso de uso conecta el fallback al puerto Redis. El adaptador Redis está
-  desactivado por defecto, almacena solo `totalPuntos`, `fetchedAt` y
-  `source=ANT`, y rechaza resultados `SIMULATED`. El fallback se prueba con un
-  puerto falso; no se ha verificado con una respuesta ANT real.
+- El caso de uso conserva dos puertos de caché aislados. Fuera del perfil local,
+  el puerto oficial usa el namespace actual `consultas-sri-ant:ant-points:v2:`
+  y solo acepta resultados `ANT`. Con Redis habilitado en `local-simulation`,
+  otro puerto usa `consultas-sri-ant:ant-points:simulation:v1:` y solo acepta
+  `SIMULATED`. Ambos derivan claves HMAC-SHA-256; el payload contiene únicamente
+  total, `fetchedAt` y la fuente de origen, nunca una cédula. Al recuperar, la
+  respuesta usa `source=CACHE`, mantiene `originSource`, la fecha original y el
+  TTL configurado. No existe un adaptador real que produzca datos `ANT`.
+- Se añadió `SUCCESS_THEN_TIMEOUT`: la primera invocación local devuelve y
+  almacena solo un resultado `SIMULATED`; las siguientes producen timeout sin
+  espera ni red. El caso de uso devuelve desde Redis `CACHE` con origen
+  `SIMULATED`, `stale=true` y un aviso explícito de que no es información oficial.
+  La caché se mantiene desactivada por defecto y la separación de namespaces
+  impide mezclar datos sintéticos y oficiales.
+- El recorrido de éxito → escritura → timeout → recuperación se verifica con
+  Redis 7.4 local real mediante una prueba optativa JUnit y un runner Playwright
+  independiente. Esta evidencia no verifica una respuesta ANT ni significa que
+  Redis Cloud esté conectado.
+- La ejecución reproducible del 16 de noviembre de 2026 registró 165 pruebas
+  ordinarias en `clean verify`, dos pruebas JUnit Redis optativas por separado,
+  y 1 recorrido Playwright `SIMULATED` → `CACHE` contra Redis 7.4.12 local. Los
+  [informes y límites de cada ejecución](../pruebas/evidencias-ant-redis/README.md)
+  distinguen esas pruebas y no atribuyen el timeout a ANT real.
 - Una respuesta 502, HTML de error o cuerpo vacío no se almacenará como resultado
   válido.
 - Un total sintético de cero es un valor presente bajo `SIMULATED`; ausencia de
@@ -226,7 +246,7 @@ El modo conserva un único reintento diez segundos después solo para HTTP 502, 
 
 Los adaptadores SRI usan HTTP GET y timeouts configurados de 3 segundos para conexión y 5 segundos para lectura. Los errores de red, timeout, HTTP y contenido inválido se representan con excepciones técnicas sanitizadas: no conservan causas HTTP que puedan incluir URL o cuerpos.
 
-Resilience4j está incluido y conserva la configuración `antPoints` (ventana de 5 llamadas, mínimo de 3, umbral de 50 %, 30 segundos en abierto y 2 llamadas de prueba). El decorator ejecuta esa protección alrededor del puerto simulado en el perfil local; no existe todavía una llamada ANT real que proteger. Los errores técnicos tipados cuentan como fallos, mientras que la ausencia de información y la validación no. El caso de uso consulta Redis tras un fallo técnico, y Redis devuelve la fuente `CACHE` con el `fetchedAt` original; el TTL sigue siendo configurable, no es una política definitiva de vigencia. Como no existe un adaptador real, no hay datos `ANT` producidos por la aplicación para respaldar ese flujo actualmente. Sin entrada cacheada, timeout e indisponibilidad se conservan como errores controlados; nunca se responde cero.
+Resilience4j está incluido y conserva la configuración `antPoints` (ventana de 5 llamadas, mínimo de 3, umbral de 50 %, 30 segundos en abierto y 2 llamadas de prueba). El decorator ejecuta esa protección alrededor del puerto simulado en el perfil local; no existe todavía una llamada ANT real que proteger. Los errores técnicos tipados cuentan como fallos, mientras que la ausencia de información y la validación no. El caso de uso consulta el puerto de caché correspondiente tras un fallo técnico. La respuesta recuperada marca `source=CACHE`, conserva `originSource` y `fetchedAt`, y `stale=true`; el TTL sigue siendo configurable, no es una política definitiva de vigencia. En el perfil de simulación el resultado continúa identificado como `SIMULATED` y no se presenta como ANT. Sin entrada cacheada, timeout e indisponibilidad se conservan como errores controlados; nunca se responde cero.
 
 ## 1. SRI — verificar existencia del RUC
 
@@ -331,7 +351,7 @@ Los dos primeros servicios SRI y el de vehículo son accesibles desde este entor
 8. **Identificación ANT.** La consulta diagnosticada utiliza `ps_tipo_identificacion=CED` y `ps_identificacion` con una cédula de 10 dígitos. El DTO propuesto ya recibe `cedula` y aplica únicamente validación estructural ASCII; no valida dígito verificador ni existencia de la persona. No se derivará una cédula de los primeros diez dígitos de un RUC. El mecanismo autorizado para capturar y usar esa identificación debe definirse antes de activar una consulta automática.
 9. **Correo electrónico.** Los endpoints diagnosticados no requieren ni recibieron email. Hasta que el contrato del proveedor o los requisitos de privacidad indiquen lo contrario, el correo se queda en el flujo de la aplicación y no se envía a SRI ni ANT.
 10. **Resilience4j.** El Circuit Breaker `antPoints` cuenta únicamente `PuntosLicenciaProviderException` y decora el puerto activo en el perfil de simulación. La suite ejercita los estados cerrado, abierto y half-open con recuperación. No se ha conectado una llamada real ANT ni se han configurado reintentos de proveedor; validaciones y ausencia de información no se cuentan como fallo técnico.
-11. **Redis.** La infraestructura recibe `Cedula`, deriva la clave con HMAC-SHA-256 v2, conserva el `fetchedAt` original y aplica TTL configurable. El payload estricto contiene únicamente `totalPuntos`, `fetchedAt` y `source=ANT`; el adaptador rechaza fuentes simuladas, tipos incorrectos, campos adicionales y documentos corruptos. El servicio intenta el puerto de caché ante fallos técnicos. La cédula no está en el payload ni el simulador puede escribir resultados. No hay todavía una fuente ANT real con la que probar el ciclo completo. La caducidad aceptable sigue pendiente de decisión.
+11. **Redis.** La infraestructura recibe `Cedula`, deriva la clave con HMAC-SHA-256 v2, conserva el `fetchedAt` original y aplica TTL configurable. El payload estricto contiene únicamente `totalPuntos`, `fetchedAt` y `source=ANT`; el adaptador rechaza fuentes simuladas, tipos incorrectos, campos adicionales y documentos corruptos. El servicio intenta el puerto de caché ante fallos técnicos. La cédula no está en el payload. El adaptador simulado no puede escribir en el namespace oficial ANT; en el perfil local puede guardar resultados SIMULATED únicamente en el namespace exclusivo `consultas-sri-ant:ant-points:simulation:v1:`. Los namespaces oficial y simulado son independientes y ambos usan HMAC-SHA-256. La recuperación `CACHE` demostrada corresponde únicamente a la simulación y Redis local, no a un fallo real del proveedor ANT. No hay todavía una fuente ANT real con la que probar el ciclo completo. La caducidad aceptable sigue pendiente de decisión.
 12. **Resultados parciales.** No se comprobó todavía la semántica de agregación cuando una fuente responde y otra falla. Antes de implementarla se debe definir si cada módulo falla de forma independiente y cómo se representa un resultado parcial, sin presentar un fallback antiguo como dato actual.
 
 ## Ejecución reproducible

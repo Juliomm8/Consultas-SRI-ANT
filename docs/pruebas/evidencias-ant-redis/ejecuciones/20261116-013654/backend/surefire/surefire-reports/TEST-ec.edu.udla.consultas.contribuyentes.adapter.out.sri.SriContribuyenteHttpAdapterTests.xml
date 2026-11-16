@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.23" tests="27" errors="0" skipped="0" failures="0" flakes="0">
+  <properties>
+    <property name="java.specification.version" value="17"/>
+    <property name="sun.cpu.isalist" value="amd64"/>
+    <property name="sun.jnu.encoding" value="Cp1252"/>
+    <property name="java.class.path" value="[workspace-path]"/>
+    <property name="java.vm.vendor" value="Eclipse Adoptium"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="user.variant" value=""/>
+    <property name="catalina.useNaming" value="false"/>
+    <property name="java.vendor.url" value="https://adoptium.net/"/>
+    <property name="user.timezone" value="America/Guayaquil"/>
+    <property name="org.jboss.logging.provider" value="slf4j"/>
+    <property name="os.name" value="Windows 11"/>
+    <property name="java.vm.specification.version" value="17"/>
+    <property name="APPLICATION_NAME" value="consultas-sri-ant-backend"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="user.country" value="US"/>
+    <property name="sun.boot.library.path" value="[absolute-path]"/>
+    <property name="sun.java.command" value="[local-user-path] [local-user-path] 2026-11-16T01-37-35_700-jvmRun1 surefire-20261116013735920_1tmp surefire_0-20261116013735920_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="[workspace-path]"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="[local-user-path]"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2026-08-18"/>
+    <property name="java.home" value="[absolute-path]"/>
+    <property name="file.separator" value="\"/>
+    <property name="basedir" value="[workspace-path]"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="FILE_LOG_CHARSET" value="windows-1252"/>
+    <property name="java.awt.headless" value="true"/>
+    <property name="surefire.real.class.path" value="[local-user-path]"/>
+    <property name="user.script" value=""/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="17.0.20.1+1"/>
+    <property name="user.name" value="[local-user]"/>
+    <property name="path.separator" value=";"/>
+    <property name="os.version" value="10.0"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="Cp1252"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="java.vendor.version" value="Temurin-17.0.20.1+1"/>
+    <property name="localRepository" value="[local-user-path]"/>
+    <property name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues"/>
+    <property name="java.io.tmpdir" value="[local-user-path]"/>
+    <property name="catalina.home" value="[local-user-path]"/>
+    <property name="java.version" value="17.0.20.1"/>
+    <property name="user.dir" value="[workspace-path]"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="PID" value="40744"/>
+    <property name="sun.os.patch.level" value=""/>
+    <property name="CONSOLE_LOG_CHARSET" value="windows-1252"/>
+    <property name="catalina.base" value="[local-user-path]"/>
+    <property name="native.encoding" value="Cp1252"/>
+    <property name="java.library.path" value="[absolute-path]:\WINDOWS\Sun\Java\bin;[absolute-path]:\WINDOWS;[absolute-path]:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\libheif\libheif\bin;[absolute-path]:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\poppler\Library\bin;[absolute-path]:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot\bin;[absolute-path]:\WINDOWS;[absolute-path]:\WINDOWS\System32\WindowsPowerShell\v1.0\;[absolute-path]:\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR;[absolute-path]:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\;[absolute-path]:\Program Files\Microsoft SQL Server\150\Tools\Binn\;[absolute-path]:\Program Files\Microsoft SQL Server\170\DTS\Binn\;[absolute-path]:\Program Files\Microsoft SQL Server\Client SDK\ODBC\180\Tools\Binn\;[local-user-path] Hub\lib;[absolute-path]:\Program Files\GitHub CLI\;[absolute-path]:\Program Files\Docker\Docker\resources\bin;[absolute-path]:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;[local-user-path] VS Code\bin;[local-user-path] Hub\lib;[local-user-path] IDE\bin;[local-user-path] VS Code\bin\copilot-shim;[absolute-path]:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\bin\fallback;[absolute-path]:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\git\cmd;[absolute-path]"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="java.vendor" value="Eclipse Adoptium"/>
+    <property name="java.vm.version" value="17.0.20.1+1"/>
+    <property name="java.specification.maintenance.version" value="1"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="61.0"/>
+    <property name="LOGGED_APPLICATION_NAME" value="[consultas-sri-ant-backend] "/>
+  </properties>
+  <testcase name="preservesObservedProviderFieldsTypesAndNestedStructuresAndExcludesUnknownFields" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.083">
+    <system-out><![CDATA[2026-11-16T01:37:47.148-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=18, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.164-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=OBJECT
+2026-11-16T01:37:47.164-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI taxpayer classification evaluated; operation=taxpayer-details, requestId=unavailable, fieldState=confirmed_natural, confirmedNaturalPerson=true
+]]></system-out>
+  </testcase>
+  <testcase name="requestsDetailsOnlyAfterExistenceIsConfirmedAndPreservesUnknownPersonType" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.006">
+    <system-out><![CDATA[2026-11-16T01:37:47.175-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.175-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=OBJECT
+2026-11-16T01:37:47.176-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI taxpayer classification evaluated; operation=taxpayer-details, requestId=unavailable, fieldState=unrecognized_text, confirmedNaturalPerson=false
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsMalformedJsonInTheDetailsResponseWithoutRetainingItsBody" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.008">
+    <system-out><![CDATA[2026-11-16T01:37:47.180-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.181-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response failure; operation=taxpayer-details, requestId=unavailable, outcome=malformed_json, httpStatus=200, contentType=application/json, elapsedMs=0, exceptionType=JsonParseException, mappedException=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="mapsConfirmedNaturalPersonType" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.004">
+    <system-out><![CDATA[2026-11-16T01:37:47.187-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.187-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=OBJECT
+2026-11-16T01:37:47.188-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI taxpayer classification evaluated; operation=taxpayer-details, requestId=unavailable, fieldState=confirmed_natural, confirmedNaturalPerson=true
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsPrimitiveDetailsRootTypes" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.005">
+    <system-out><![CDATA[2026-11-16T01:37:47.192-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.193-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.193-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response rejected; operation=taxpayer-details, requestId=unavailable, outcome=unexpected_structure, reason=expected_object_or_array, jsonRootType=BOOLEAN, failureType=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="selectsTheMatchingRucWhenTheDetailsArrayContainsSeveralRecords" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.005">
+    <system-out><![CDATA[2026-11-16T01:37:47.196-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.197-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=ARRAY
+2026-11-16T01:37:47.197-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI taxpayer classification evaluated; operation=taxpayer-details, requestId=unavailable, fieldState=confirmed_natural, confirmedNaturalPerson=true
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsAnArrayRecordWithAnUnexpectedIdentifierJsonType" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.004">
+    <system-out><![CDATA[2026-11-16T01:37:47.201-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.201-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=ARRAY
+2026-11-16T01:37:47.202-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response rejected; operation=taxpayer-details, requestId=unavailable, outcome=unexpected_structure, reason=array_record_identifier_missing_or_invalid, jsonRootType=OBJECT, failureType=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsMalformedJsonWithoutRetainingResponseDetails" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.004">
+    <system-out><![CDATA[2026-11-16T01:37:47.206-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response failure; operation=taxpayer-existence, requestId=unavailable, outcome=malformed_json, httpStatus=200, contentType=application/json, elapsedMs=0, exceptionType=JsonParseException, mappedException=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsAnArrayWithoutAMatchingRucAndDoesNotLogRucOrBody(CapturedOutput)" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.01">
+    <system-out><![CDATA[2026-11-16T01:37:47.214-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.215-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=ARRAY
+2026-11-16T01:37:47.215-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response rejected; operation=taxpayer-details, requestId=unavailable, outcome=unexpected_structure, reason=no_record_matches_requested_identifier, jsonRootType=ARRAY, failureType=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="mapsTheObservedSingleRecordArrayAndPreservesItsFields" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.003">
+    <system-out><![CDATA[2026-11-16T01:37:47.219-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.220-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=ARRAY
+2026-11-16T01:37:47.220-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI taxpayer classification evaluated; operation=taxpayer-details, requestId=unavailable, fieldState=confirmed_natural, confirmedNaturalPerson=true
+]]></system-out>
+  </testcase>
+  <testcase name="treatsNoContentAfterPositiveExistenceAsInvalidResponse" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.003">
+    <system-out><![CDATA[2026-11-16T01:37:47.223-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.224-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response failure; operation=taxpayer-details, requestId=unavailable, outcome=empty_body, httpStatus=204, contentType=missing, elapsedMs=0, exceptionType=none, mappedException=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="returnsEmptyAndDoesNotRequestDetailsWhenExistenceIsFalse" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.003">
+    <system-out><![CDATA[2026-11-16T01:37:47.228-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+]]></system-out>
+  </testcase>
+  <testcase name="keepsPersonTypeUndeterminedWhenTheProviderPropertyIsMissing" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.003">
+    <system-out><![CDATA[2026-11-16T01:37:47.232-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.232-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=OBJECT
+2026-11-16T01:37:47.232-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI taxpayer classification evaluated; operation=taxpayer-details, requestId=unavailable, fieldState=missing, confirmedNaturalPerson=false
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsUnexpectedElementTypesInTheDetailsArray" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.004">
+    <system-out><![CDATA[2026-11-16T01:37:47.236-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.237-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=ARRAY
+2026-11-16T01:37:47.237-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response rejected; operation=taxpayer-details, requestId=unavailable, outcome=unexpected_structure, reason=array_element_not_object, jsonRootType=NUMBER, failureType=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="mapsExternalGatewayErrorsWithoutExposingTheBodyOrIdentifier" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.021">
+    <system-out><![CDATA[2026-11-16T01:37:47.257-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response failure; operation=taxpayer-existence, requestId=unavailable, outcome=http_error, httpStatus=502, contentType=application/json, elapsedMs=15, exceptionType=BadGateway, mappedException=SriIntegrationException
+2026-11-16T01:37:47.258-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response failure; operation=taxpayer-existence, requestId=unavailable, outcome=http_error, httpStatus=503, contentType=application/json, elapsedMs=0, exceptionType=ServiceUnavailable, mappedException=SriIntegrationException
+2026-11-16T01:37:47.259-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response failure; operation=taxpayer-existence, requestId=unavailable, outcome=http_error, httpStatus=504, contentType=application/json, elapsedMs=0, exceptionType=GatewayTimeout, mappedException=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="classifiesTimeoutWithoutRetainingTheClientExceptionOrIdentifier" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.005">
+    <system-out><![CDATA[2026-11-16T01:37:47.265-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response failure; operation=taxpayer-existence, requestId=unavailable, outcome=timeout, httpStatus=unavailable, contentType=unavailable, elapsedMs=0, exceptionType=ResourceAccessException, mappedException=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="keepsPersonTypeUndeterminedWhenTheProviderPropertyHasAnUnexpectedJsonType" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.003">
+    <system-out><![CDATA[2026-11-16T01:37:47.268-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.268-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=OBJECT
+2026-11-16T01:37:47.268-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI taxpayer classification evaluated; operation=taxpayer-details, requestId=unavailable, fieldState=non_textual, confirmedNaturalPerson=false
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsAnArrayRecordWithoutRuc" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.002">
+    <system-out><![CDATA[2026-11-16T01:37:47.271-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.271-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=ARRAY
+2026-11-16T01:37:47.271-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response rejected; operation=taxpayer-details, requestId=unavailable, outcome=unexpected_structure, reason=array_record_identifier_missing_or_invalid, jsonRootType=OBJECT, failureType=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="classifiesConnectionFailureWithoutRetainingTheClientExceptionOrIdentifier" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.003">
+    <system-out><![CDATA[2026-11-16T01:37:47.275-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response failure; operation=taxpayer-existence, requestId=unavailable, outcome=unavailable, httpStatus=unavailable, contentType=unavailable, elapsedMs=0, exceptionType=ResourceAccessException, mappedException=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsAnEmptyDetailsArrayInsteadOfTreatingItAsNotFound" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.004">
+    <system-out><![CDATA[2026-11-16T01:37:47.279-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.279-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=ARRAY
+2026-11-16T01:37:47.279-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response rejected; operation=taxpayer-details, requestId=unavailable, outcome=unexpected_structure, reason=empty_details_array_after_positive_existence, jsonRootType=ARRAY, failureType=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsDetailsThatDoNotMatchTheRequestedRuc" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.003">
+    <system-out><![CDATA[2026-11-16T01:37:47.282-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.282-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=OBJECT
+2026-11-16T01:37:47.282-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response rejected; operation=taxpayer-details, requestId=unavailable, outcome=unexpected_structure, reason=object_record_identifier_missing_or_mismatched, jsonRootType=OBJECT, failureType=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsMultipleArrayRecordsMatchingTheRequestedRuc" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.004">
+    <system-out><![CDATA[2026-11-16T01:37:47.286-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.287-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=ARRAY
+2026-11-16T01:37:47.287-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response rejected; operation=taxpayer-details, requestId=unavailable, outcome=unexpected_structure, reason=multiple_records_match_requested_identifier, jsonRootType=ARRAY, failureType=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="keepsPersonTypeUndeterminedWhenTheProviderPropertyIsNull" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.003">
+    <system-out><![CDATA[2026-11-16T01:37:47.289-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.290-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=OBJECT
+2026-11-16T01:37:47.290-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI taxpayer classification evaluated; operation=taxpayer-details, requestId=unavailable, fieldState=null, confirmedNaturalPerson=false
+]]></system-out>
+  </testcase>
+  <testcase name="treatsHttp200WithAnEmptyBodyAsAnInvalidResponse" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.004">
+    <system-out><![CDATA[2026-11-16T01:37:47.293-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response failure; operation=taxpayer-existence, requestId=unavailable, outcome=empty_body, httpStatus=200, contentType=application/json, elapsedMs=0, exceptionType=none, mappedException=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="keepsUnknownPersonTypeUndeterminedForTheMatchingArrayRecord" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.002">
+    <system-out><![CDATA[2026-11-16T01:37:47.296-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.297-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=ARRAY
+2026-11-16T01:37:47.297-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI taxpayer classification evaluated; operation=taxpayer-details, requestId=unavailable, fieldState=unrecognized_text, confirmedNaturalPerson=false
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsNullElementsInTheDetailsArray" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.004">
+    <system-out><![CDATA[2026-11-16T01:37:47.300-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=BOOLEAN
+2026-11-16T01:37:47.301-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-details, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=ARRAY
+2026-11-16T01:37:47.301-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response rejected; operation=taxpayer-details, requestId=unavailable, outcome=unexpected_structure, reason=array_element_not_object, jsonRootType=NULL, failureType=SriIntegrationException
+]]></system-out>
+  </testcase>
+  <testcase name="rejectsNonBooleanExistenceResponses" classname="ec.edu.udla.consultas.contribuyentes.adapter.out.sri.SriContribuyenteHttpAdapterTests" time="0.003">
+    <system-out><![CDATA[2026-11-16T01:37:47.305-05:00  INFO 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response received; operation=taxpayer-existence, requestId=unavailable, httpStatus=200, contentType=application/json, elapsedMs=0, jsonRootType=OBJECT
+2026-11-16T01:37:47.305-05:00  WARN 40744 --- [consultas-sri-ant-backend] [           main] e.e.u.c.s.i.sri.SriResponseSupport       : SRI response rejected; operation=taxpayer-existence, requestId=unavailable, outcome=unexpected_structure, reason=expected_boolean, jsonRootType=OBJECT, failureType=SriIntegrationException
+]]></system-out>
+  </testcase>
+</testsuite>

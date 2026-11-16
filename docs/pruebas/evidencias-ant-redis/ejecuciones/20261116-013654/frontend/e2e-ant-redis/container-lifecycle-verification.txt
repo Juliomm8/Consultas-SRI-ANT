@@ -1,0 +1,6 @@
+Execution started: 2026-11-16T01:44:56-05:00
+Execution finished: 2026-11-16T01:45:17-05:00
+Runner is configured to bind its temporary Redis container to 127.0.0.1 and stop it in finally; image version is taken from INFO server output.
+Initial matching containers: 0.
+Final matching containers: 0.
+New matching containers remaining after run: 0.

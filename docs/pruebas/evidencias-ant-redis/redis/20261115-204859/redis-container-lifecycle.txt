@@ -1,0 +1,6 @@
+Docker image: redis:7.4-alpine
+Redis server version: 7.4.12
+Published bind: 127.0.0.1 on an ephemeral host port
+Container mode: --rm; no volume mounted
+JUnit integration result: 2 passed, 0 failed, 0 errors, 0 skipped
+Cleanup: docker stop completed; docker ps -a lookup found no container with the run-specific name.

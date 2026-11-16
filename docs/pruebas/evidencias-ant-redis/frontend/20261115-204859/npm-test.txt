@@ -1,0 +1,12 @@
+
+> consultas-sri-ant-frontend@0.0.0 test
+> vitest run
+
+
+ RUN  v5.1.0 [LOCAL_PATH_REDACTED]
+
+
+ Test Files  3 passed (3)
+      Tests  33 passed (33)
+   Start at  20:55:36
+   Duration  13.30s (tests 82%, environment 13%, setup 3%, import 1%)

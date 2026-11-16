@@ -1,0 +1,148 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "[workspace-path]\\frontend\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config=e2e/ant-demo.redis.playwright.config.ts"
+    ],
+    "configFile": "[workspace-path]\\frontend\\e2e\\ant-demo.redis.playwright.config.ts",
+    "rootDir": "C:/Dev/Arquitectura/Consultas-SRI-ANT/frontend/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Dev/Arquitectura/Consultas-SRI-ANT/frontend/node_modules/.cache/ant-demo-redis-e2e-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "C:/Dev/Arquitectura/Consultas-SRI-ANT/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/ant-demo.redis.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "[workspace-path]\\frontend\\node_modules\\.cache\\ant-demo-redis-e2e-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "[workspace-path]\\frontend\\e2e",
+        "snapshotDir": "[workspace-path]\\frontend\\e2e",
+        "testIgnore": [],
+        "testMatch": "**/ant-demo.redis.spec.ts",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:54829",
+          "browserName": "chromium",
+          "headless": true,
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "[local-user-path]\\AppData\\Local\\Temp\\consultas-sri-ant-playwright-20261116-013654\\ant-redis-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "ant-demo.redis.spec.ts",
+      "file": "ant-demo.redis.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "real Redis backs simulated success and timeout recovery through React and Spring Boot",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 751,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-16T06:45:08.631Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "86ff16b55cf5f7aacc6b-1a2ad9343419296887eb",
+          "file": "ant-demo.redis.spec.ts",
+          "line": 29,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-16T06:45:08.349Z",
+    "duration": 1186.6779999999999,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

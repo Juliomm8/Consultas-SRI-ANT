@@ -1,0 +1,4 @@
+Docker image: redis:7.4-alpine
+Bind: 127.0.0.1 only
+redis_version:7.4.12
+Container lifecycle: started for this test; --rm enabled; stopped in finally.
