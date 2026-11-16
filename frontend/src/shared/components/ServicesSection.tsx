@@ -4,9 +4,11 @@ import { PortalIcon } from './PortalIcon'
 export function ServicesSection({
   antDemoAvailable,
   onOpenAntDemo,
+  allowOfficialAntNavigation,
 }: {
   antDemoAvailable: boolean
   onOpenAntDemo: () => void
+  allowOfficialAntNavigation: boolean
 }) {
   return (
     <section className="service-section" id="servicios" aria-labelledby="services-title" tabIndex={-1}>
@@ -66,7 +68,11 @@ export function ServicesSection({
             </div>
           </article>
 
-          <AntStatusCard antDemoAvailable={antDemoAvailable} onOpenAntDemo={onOpenAntDemo} />
+          <AntStatusCard
+            antDemoAvailable={antDemoAvailable}
+            onOpenAntDemo={onOpenAntDemo}
+            allowOfficialNavigation={allowOfficialAntNavigation}
+          />
         </div>
         <aside className="service-directory__note">
           <p className="eyebrow eyebrow--ink"><span className="eyebrow__rule" /> Transparencia del servicio</p>

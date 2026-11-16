@@ -9,8 +9,32 @@ Observar si una persona puede localizar y comprender el recorrido de consultas s
 - Realizar la sesión en una copia local del proyecto, con datos de prueba y servicios stub/simulados. No ejecutar tareas contra proveedores externos.
 - Activar la demostración ANT únicamente en Vite de desarrollo mediante `VITE_ANT_DEMO=true`; el backend simulado debe usar el perfil local documentado.
 - Verificar previamente que los fixtures sean sintéticos. Si el entorno no está aislado de SRI/ANT reales, detener la sesión antes de enviar formularios.
+- Para recorrer **toda la aplicación** con las consultas SRI aisladas, preparar el JAR y usar `npm run usability:session` desde `frontend/`. Ese runner inicia el stub SRI, Spring Boot con los perfiles `e2e,local-simulation` y Vite con la demo habilitada; no ejecuta Playwright automáticamente. No usar para una sesión completa las instrucciones ANT de dos terminales de `demo-ant-local.md`, pues ese procedimiento aislado no configura el guard SRI.
+- Abrir únicamente la URL loopback que imprime el runner. En el modo aislado `VITE_E2E`, la interfaz desactiva el enlace al trámite oficial externo; el flujo evaluado debe permanecer dentro de la aplicación local.
 - Explicar que la participación es voluntaria, pedir autorización para tomar notas y no grabar pantalla o voz sin consentimiento explícito.
 - No registrar nombres, correos, cédulas, placas, direcciones ni otros datos personales. Asignar un código anónimo solo al iniciar la sesión.
+
+### Iniciar el entorno interactivo aislado
+
+Si el JAR o las dependencias aún no existen, prepararlos antes de convocar al participante:
+
+```powershell
+Set-Location .\backend
+.\mvnw.cmd -B -DskipTests package
+Set-Location ..\frontend
+npm install
+```
+
+En una terminal PowerShell dedicada, iniciar el runner y mantener esa terminal abierta durante la sesión:
+
+```powershell
+Set-Location .\frontend
+npm run usability:session
+```
+
+El runner asigna puertos loopback disponibles e imprime la URL exacta, el estado del backend y los cuatro fixtures sintéticos. El participante puede manejar el navegador manualmente; no se lanza Playwright. Antes de arrancar Spring Boot, el runner copia el JAR ejecutable a un directorio temporal propio para evitar conflictos si una suite Maven reconstruye `backend/target` durante la sesión. Para terminar, presionar `Ctrl+C` en esa misma terminal. El runner cierra solamente el stub, los procesos Spring Boot/Vite que inició y la copia temporal que creó.
+
+Fixtures permitidos para esta sesión: correo `e2e-user@example.invalid`, RUC `1234567890123`, placa `E2E1234` y cédula ANT sintética `0000000000`. No ingresar datos personales.
 
 ## Perfil general del participante
 

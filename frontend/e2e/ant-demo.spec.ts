@@ -33,12 +33,9 @@ async function captureEvidence(page: Page, fileName: string) {
 async function openDemo(page: Page) {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: /consulta de contribuyente/i })).toBeVisible()
-  const officialProcedureLink = page.getByRole('link', { name: /trámite oficial del certificado/i })
-  await expect(officialProcedureLink).toBeVisible()
-  await expect(officialProcedureLink).toHaveAttribute(
-    'href',
-    'https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor',
-  )
+  await expect(page.getByRole('link', { name: /trámite oficial del certificado/i })).toHaveCount(0)
+  await expect(page.getByText(/enlace al trámite oficial externo está desactivado durante esta sesión local aislada/i))
+    .toBeVisible()
   await expect(page.getByRole('button', { name: 'Demostración ANT' })).toBeVisible()
   const homeDemoButton = page.getByRole('button', { name: 'Simular consulta ANT' })
   await expect(homeDemoButton).toBeVisible()

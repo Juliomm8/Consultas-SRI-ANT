@@ -24,6 +24,38 @@ El runner Playwright dedicado activa también el guard de perfil `e2e`; configur
 
 ## Ejecución manual
 
+> **Sesión completa de usabilidad:** para permitir consultas SRI sin contactar al proveedor, usa el runner interactivo que se describe a continuación. Las instrucciones manuales de dos terminales de esta sección sirven para una comprobación ANT aislada; por sí solas no activan el perfil `e2e` ni sustituyen los destinos SRI por el stub. No envíes formularios SRI con ese procedimiento.
+
+### Entorno de usabilidad con SRI stub y ANT simulada
+
+El runner dedicado inicia un servidor fixture SRI en un puerto aleatorio de loopback, Spring Boot con `e2e,local-simulation`, y Vite con `VITE_ANT_DEMO=true`. Redis se desactiva para la sesión. Las respuestas SRI se reutilizan desde `frontend/e2e/sri-test-stub.mjs`, extraído del runner E2E existente; no se agregaron contratos ni fixtures distintos. El `E2eSriEndpointGuard` impide que el backend arranque si cualquiera de los tres destinos SRI no usa el mismo stub local.
+
+Prepara previamente el artefacto del backend y las dependencias del frontend:
+
+```powershell
+Set-Location .\backend
+.\mvnw.cmd -B -DskipTests package
+Set-Location ..\frontend
+npm install
+```
+
+Inicia la sesión desde una terminal dedicada:
+
+```powershell
+Set-Location .\frontend
+npm run usability:session
+```
+
+Abre la URL `http://127.0.0.1:<puerto>` que imprima el runner. El puerto concreto se asigna en cada ejecución. El navegador queda libre para el participante y no se inicia Playwright. El runner muestra los fixtures sintéticos existentes y mantiene los servicios activos hasta que se presione `Ctrl+C` en esa terminal; después detiene solo los procesos y el stub que inició. No requiere Redis ni Docker.
+
+Para esta sesión, las consultas de la aplicación pasan por el proxy Vite local: contribuyente y vehículo llegan al stub SRI, y puntos de licencia llega al simulador ANT dentro de Spring. El backend valida los destinos mediante el perfil `e2e`; el adaptador `SimulatedAntPuntosLicenciaAdapter` no hace solicitudes de red. Como medida adicional de aislamiento, `VITE_E2E=true` oculta el enlace externo al trámite oficial durante la sesión; en la ejecución normal se conserva.
+
+El proceso informa al terminar cuántas solicitudes recibió el stub por operación (solo método, estado y nombres de parámetros, nunca valores). Si el participante no completa una consulta SRI, es normal que el resumen indique cero solicitudes para esa operación. Los logs del backend se inspeccionan en memoria únicamente para detectar los marcadores de prueba; el runner no los imprime ni los guarda.
+
+El escenario queda fijado en `SUCCESS`; Redis está apagado. Esta sesión permite observar el resultado ANT `SIMULATED`, pero no demuestra una recuperación desde caché. Para esa evidencia existe la suite automatizada independiente con Redis local real documentada más adelante.
+
+### Comprobación ANT aislada en dos terminales
+
 En una terminal PowerShell, inicia el backend:
 
 ```powershell

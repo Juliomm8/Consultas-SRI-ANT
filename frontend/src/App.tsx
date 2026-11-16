@@ -102,7 +102,11 @@ function App() {
       <main id="main-content" tabIndex={-1}>
         <div className="page-shell">
           <HeroSection />
-          <ServicesSection antDemoAvailable={ANT_DEMO_AVAILABLE} onOpenAntDemo={() => setShowAntDemo(true)} />
+          <ServicesSection
+            antDemoAvailable={ANT_DEMO_AVAILABLE}
+            onOpenAntDemo={() => setShowAntDemo(true)}
+            allowOfficialAntNavigation={import.meta.env.VITE_E2E !== 'true'}
+          />
           <ConsultationFlow
             taxpayerResult={taxpayerResult}
             vehicleResult={vehicleResult}

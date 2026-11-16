@@ -11,6 +11,7 @@
     "test:e2e": "node ./e2e/run.mjs",
     "test:e2e:ant": "node ./e2e/ant-demo.run.mjs",
     "test:e2e:ant:redis": "node ./e2e/ant-demo.run.mjs --redis",
+    "usability:session": "node ./e2e/usability-session.run.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
