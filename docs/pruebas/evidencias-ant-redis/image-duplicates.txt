@@ -1,0 +1,83 @@
+PNG duplicate audit — 2026-11-16
+SHA-256 hashes were calculated for all PNG files under docs/. One canonical copy is selected per exact-byte group; other files remain untouched locally and are excluded from publication.
+
+SHA-256 36FBB8811E1DBB0C3757AC068E1F00340EF5C76AC34BF26771EDA786C1FA6AB0
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/flujo-sri/taxpayer-success-390.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/flujo-sri/taxpayer-success-390.png
+
+SHA-256 3C47F0E69B33A334BFB435ABCD08B3372623457F675EFC06BA30D85FDDD2CA4A
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-ant/15-ant-respuesta-invalida-fixture.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/15-ant-respuesta-invalida-fixture.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-local/15-ant-respuesta-invalida-fixture.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-redis/capturas/20261115-204859/ant-demo-local/15-ant-respuesta-invalida-fixture.png
+
+SHA-256 48E82006CFCD1C6B7A2BAF57F20F057D77586B509DF56CC75A30545B770AD802
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/09-estado-ant.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/09-estado-ant.png
+
+SHA-256 61F5BF4F3FD2CF3DA342F67CC490A60EBEE943D24B60447E767B918164AD2DBB
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/02-portada-movil.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/02-portada-movil.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/flujo-sri/home-390.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/flujo-sri/home-390.png
+
+SHA-256 711026A9F1A6F2BA1DFFB3CAFD3BCBEAA59DC77E400F54C88CF8E93A4755F438
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/flujo-sri/vehicle-success-390.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/flujo-sri/vehicle-success-390.png
+
+SHA-256 795E10CE960C7026B083A0A333F4254717B87593BF7D12D71D2C9D701DFF7563
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/04-formulario-contribuyente.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/04-formulario-contribuyente.png
+
+SHA-256 9BE34BF804EB07E3E21814A9BB126192A562EA26523340388B0230788244C60A
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-ant/13-ant-servicio-indisponible-fixture.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/13-ant-servicio-indisponible-fixture.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-local/13-ant-servicio-indisponible-fixture.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-redis/capturas/20261115-204859/ant-demo-local/13-ant-servicio-indisponible-fixture.png
+
+SHA-256 A8E64547603F23859393A2A8EED8BDC4D30B244B4FEAECFAC1A845226A4DBBAB
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/flujo-sri/home-768.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/flujo-sri/home-768.png
+
+SHA-256 B41D446E235271BB98C40F84D73DC77B633F5C156B91B6A4CBB92C67D807C6EA
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-ant/11-ant-cache-fixture-interfaz.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-local/11-ant-cache-fixture-interfaz.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-redis/capturas/20261115-204859/ant-demo-local/11-ant-cache-fixture-interfaz.png
+
+SHA-256 C554F48BCF8AFC681C96F4086D72B2D0A1F82BFB566DB413578F84E2657F6D21
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/06-formulario-vehicular.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/06-formulario-vehicular.png
+
+SHA-256 C61FB0EAEF43B8FB0FFB6CF56513D64D2A837A597F5016FE8719D6B605E9687C
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-ant/10-ant-cero-puntos.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/10-ant-cero-puntos.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-local/10-ant-cero-puntos.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-redis/capturas/20261115-204859/ant-demo-local/10-ant-cero-puntos.png
+
+SHA-256 D1335A4E1F85FF3B641BE3DB74DBE48B649316DDA1824C1017A0189D18E745AD
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-ant/12-ant-sin-informacion.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/12-ant-sin-informacion.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-local/12-ant-sin-informacion.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-redis/capturas/20261115-204859/ant-demo-local/12-ant-sin-informacion.png
+
+SHA-256 D1F3EC9567AB842652684C2407741C0F5EB4FB1F499A145DC810AD75BCFED9E0
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/flujo-sri/home-320.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/flujo-sri/home-320.png
+
+SHA-256 E5EDE6B9323F3AC5A06C100552DD61D70B172BA4AE99F1B1E6BBF0FDD38AEF16
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/03-catalogo-servicios.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/03-catalogo-servicios.png
+
+SHA-256 EA7EDFBA31AF27BEFD11999785A486CC56DC650D5D0A47F76B574C069E2FB0BA
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-ant/14-ant-timeout-fixture.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/14-ant-timeout-fixture.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-local/14-ant-timeout-fixture.png
+Preserved locally, not published as a duplicate: docs/pruebas/evidencias-ant-redis/capturas/20261115-204859/ant-demo-local/14-ant-timeout-fixture.png
+
+SHA-256 F7388E7446E46729398378EFB07F3FB66300EEE069434D70BE48825A91FA134E
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/flujo-sri/home-1440.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/flujo-sri/home-1440.png
+
+SHA-256 FF7CAB9B83E93AEEA7AC8EFFD8D9627072CCF2BCD3F34058EC48F9477D5F01FF
+Canonical: docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-sri/01-portada-escritorio.png
+Preserved locally, not published as a duplicate: docs/diseno/evidencias-ui/rediseño-editorial/01-portada-escritorio.png
