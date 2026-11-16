@@ -31,3 +31,6 @@ application-local.yaml
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Temporary local Vite scaffold; preserve locally but never publish.
+/CUsersJulioPCAppDataLocalTempconsultas-sri-ant-vite-scaffold-20261114/
