@@ -9,8 +9,10 @@ const syntheticProviderFailureRuc = '9999999999999'
 const syntheticPlate = 'E2E1234'
 const syntheticProviderBodyMarker = 'SYNTHETIC_PROVIDER_BODY'
 const stubBaseUrl = process.env.E2E_SRI_STUB_URL
-const uiEvidenceDirectory = path.resolve(process.cwd(), '../docs/diseno/evidencias-ui')
-const redesignEvidenceDirectory = path.join(uiEvidenceDirectory, 'rediseño-final')
+const redesignEvidenceDirectory = process.env.E2E_UI_EVIDENCE_ROOT
+  ? path.resolve(process.cwd(), process.env.E2E_UI_EVIDENCE_ROOT)
+  : path.resolve(process.cwd(), '../docs/diseno/evidencias-ui/rediseño-editorial')
+const uiEvidenceDirectory = path.join(redesignEvidenceDirectory, 'flujo-sri')
 
 if (!stubBaseUrl) {
   throw new Error('The isolated SRI fixture server is required for the E2E suite.')
@@ -108,8 +110,12 @@ test('consulta contribuyente y vehículo recorre React, Vite, Spring Boot y el s
   await expect(page.getByRole('navigation', { name: 'Etapas de consulta' }).getByRole('listitem')).toHaveCount(2)
   await captureUiEvidence(page, 'home-1440.png')
   await captureRedesignEvidence(page, '01-portada-escritorio.png')
-  await captureRedesignEvidence(page, '02-catalogo-servicios.png', page.locator('#servicios'))
-  await captureRedesignEvidence(page, '03-formulario-contribuyente.png', page.locator('.consultation-main > .workflow-panel').first())
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expectNoHorizontalOverflow(page, 390)
+  await captureRedesignEvidence(page, '02-portada-movil.png')
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await captureRedesignEvidence(page, '03-catalogo-servicios.png', page.locator('#servicios'))
+  await captureRedesignEvidence(page, '04-formulario-contribuyente.png', page.locator('.consultation-main > .workflow-panel').first())
 
   await enterTaxpayerDetails(page, syntheticSuccessRuc)
   const taxpayerResponsePromise = page.waitForResponse(response =>
@@ -123,8 +129,8 @@ test('consulta contribuyente y vehículo recorre React, Vite, Spring Boot y el s
   await expect(page.getByText('Persona natural confirmada')).toBeVisible()
   await expect(page.getByText('ACTIVO SINTÉTICO')).toBeVisible()
   await captureUiEvidence(page, 'taxpayer-success.png')
-  await captureRedesignEvidence(page, '04-resultado-contribuyente.png', page.getByRole('region', { name: 'Resultado de contribuyente' }))
-  await captureRedesignEvidence(page, '05-formulario-vehicular.png', page.locator('.workflow-panel--vehicle'))
+  await captureRedesignEvidence(page, '05-resultado-contribuyente.png', page.getByRole('region', { name: 'Resultado de contribuyente' }))
+  await captureRedesignEvidence(page, '06-formulario-vehicular.png', page.locator('.workflow-panel--vehicle'))
   await page.setViewportSize({ width: 320, height: 740 })
   await expectNoHorizontalOverflow(page, 320)
   await page.setViewportSize({ width: 390, height: 844 })
@@ -146,7 +152,7 @@ test('consulta contribuyente y vehículo recorre React, Vite, Spring Boot y el s
   await expect(page.getByRole('heading', { name: 'MARCA E2E SINTÉTICA · MODELO E2E SINTÉTICO' })).toBeVisible()
   await expect(page.getByText('MARCA E2E SINTÉTICA')).toBeVisible()
   await captureUiEvidence(page, 'vehicle-success.png')
-  await captureRedesignEvidence(page, '06-resultado-vehicular.png', page.getByRole('region', { name: 'Resultado de vehículos' }))
+  await captureRedesignEvidence(page, '07-resultado-vehicular.png', page.getByRole('region', { name: 'Resultado de vehículos' }))
   await page.setViewportSize({ width: 320, height: 740 })
   await expectNoHorizontalOverflow(page, 320)
   await page.setViewportSize({ width: 390, height: 844 })
@@ -185,7 +191,7 @@ test('traduce un HTTP 503 del proveedor a un error seguro en la interfaz', async
   expect(visibleError).not.toContain('Exception')
   expect(visibleError).not.toContain('stack trace')
   await captureUiEvidence(page, 'provider-error.png')
-  await captureRedesignEvidence(page, '07-error-proveedor.png', page.getByRole('alert'))
+  await captureRedesignEvidence(page, '08-error-proveedor.png', page.getByRole('alert'))
   await page.setViewportSize({ width: 390, height: 844 })
   await expectNoHorizontalOverflow(page, 390)
   await page.getByRole('alert').scrollIntoViewIfNeeded()
@@ -207,13 +213,17 @@ test('mantiene la portada usable y sin desbordamiento en los anchos objetivo', a
   ]
 
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: /consulta con claridad/i })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   await expect(page.getByRole('img', { name: /carretera andina/i })).toBeVisible()
 
   for (const viewport of viewports) {
     await page.setViewportSize(viewport)
     await page.evaluate(() => document.fonts.ready)
-    await expect(page.getByRole('link', { name: /comenzar consulta/i })).toBeVisible()
+    await page.waitForFunction(() => {
+      const navigation = document.querySelector('.site-nav')
+      return window.innerWidth > 860 || (navigation !== null && getComputedStyle(navigation).opacity === '0')
+    })
+    await expect(page.locator('.hero').getByRole('link', { name: /iniciar consulta/i })).toBeVisible()
     const dimensions = await page.evaluate(() => ({
       documentWidth: document.documentElement.scrollWidth,
       viewportWidth: window.innerWidth,
@@ -222,7 +232,7 @@ test('mantiene la portada usable y sin desbordamiento en los anchos objetivo', a
     expect(dimensions.documentWidth, `horizontal overflow at ${viewport.width}px`).toBeLessThanOrEqual(dimensions.viewportWidth)
     expect(dimensions.heroWidth).toBeGreaterThan(0)
     await captureUiEvidence(page, `home-${viewport.width}.png`)
-    if (viewport.width === 390) await captureRedesignEvidence(page, '09-portada-movil.png')
+    if (viewport.width === 390) await captureRedesignEvidence(page, '02-portada-movil.png')
   }
 
   await page.setViewportSize({ width: 390, height: 844 })
@@ -261,8 +271,8 @@ test('mantiene la portada usable y sin desbordamiento en los anchos objetivo', a
   await expect(menu).toHaveAttribute('aria-expanded', 'true')
   await navigation.getByRole('link', { name: 'Estado ANT' }).click()
   await expect(page).toHaveURL(/#estado-ant$/)
-  await expect(page.getByRole('heading', { name: /puntos de licencia ant/i })).toBeVisible()
-  await captureRedesignEvidence(page, '08-estado-ant.png', page.locator('#estado-ant'))
+  await expect(page.getByRole('heading', { name: /consulta de puntos de licencia/i })).toBeVisible()
+  await captureRedesignEvidence(page, '09-estado-ant.png', page.locator('#estado-ant'))
   await page.getByRole('link', { name: 'Volver arriba' }).click()
   await expect(page).toHaveURL(/#inicio$/)
   expect(externalBrowserRequestObserved).toBe(false)

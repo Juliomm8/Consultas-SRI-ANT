@@ -11,7 +11,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  reporter: 'list',
+  reporter: process.env.E2E_PLAYWRIGHT_JSON_REPORT_PATH
+    ? [['list'], ['json', { outputFile: process.env.E2E_PLAYWRIGHT_JSON_REPORT_PATH }]]
+    : 'list',
   outputDir: '../node_modules/.cache/e2e-results',
   use: {
     baseURL,

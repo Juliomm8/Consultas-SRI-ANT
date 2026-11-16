@@ -7,16 +7,32 @@ import { mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import process from 'node:process'
+import { randomBytes } from 'node:crypto'
 
 const frontendDirectory = path.dirname(fileURLToPath(import.meta.url))
 const frontendRoot = path.resolve(frontendDirectory, '..')
 const repositoryRoot = path.resolve(frontendRoot, '..')
 const backendRoot = path.join(repositoryRoot, 'backend')
 const jarPath = path.join(backendRoot, 'target', 'consultas-sri-ant-backend-0.0.1-SNAPSHOT.jar')
-const evidenceDirectory = path.join(repositoryRoot, 'docs', 'pruebas', 'evidencias', 'ant-demo')
-const evidencePath = path.join(evidenceDirectory, 'demo-ant-local-success.png')
+const redisMode = process.argv.includes('--redis')
+const defaultEvidenceDirectory = redisMode
+  ? path.join(repositoryRoot, 'docs', 'pruebas', 'evidencias-ant-redis')
+  : path.join(repositoryRoot, 'docs', 'pruebas', 'evidencias-ant-local')
+const evidenceRoot = path.join(repositoryRoot, 'docs', 'pruebas', 'evidencias-ant-redis')
+const evidenceDirectory = process.env.E2E_ANT_EVIDENCE_DIR
+  ? path.resolve(repositoryRoot, process.env.E2E_ANT_EVIDENCE_DIR)
+  : defaultEvidenceDirectory
+if (process.env.E2E_ANT_EVIDENCE_DIR) {
+  const relativeEvidencePath = path.relative(evidenceRoot, evidenceDirectory)
+  if (relativeEvidencePath.startsWith('..') || path.isAbsolute(relativeEvidencePath)) {
+    throw new Error('E2E_ANT_EVIDENCE_DIR must stay inside docs/pruebas/evidencias-ant-redis/.')
+  }
+}
+const evidencePath = path.join(evidenceDirectory, redisMode ? 'ant-redis-simulated-success.png' : '09-ant-simulado.png')
 const children = []
 const syntheticCedula = '0000000000'
+const redisContainerName = `consultas-sri-ant-redis-demo-${process.pid}`
+let redisContainerStarted = false
 
 function runCommand(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -32,6 +48,25 @@ function runCommand(command, args, options = {}) {
       if (code === 0) resolve()
       else reject(new Error(`${options.label ?? 'Command'} exited unsuccessfully (${code ?? signal}).`))
     })
+  })
+}
+
+function runCommandCapture(command, args, cwd = repositoryRoot) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd,
+      env: process.env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: false,
+      windowsHide: true,
+    })
+    let stdout = ''
+    child.stdout.on('data', chunk => { stdout += chunk.toString() })
+    child.stderr.on('data', () => undefined)
+    child.once('error', () => reject(new Error('A required local command could not be started.')))
+    child.once('exit', code => code === 0
+      ? resolve(stdout.trim())
+      : reject(new Error('A required local command exited unsuccessfully.')))
   })
 }
 
@@ -108,7 +143,43 @@ async function stopChildren() {
 
 let stub
 const backendOutput = []
+let redisPort
+let redisSecret
+let redisServerVersion
 try {
+  if (redisMode) {
+    redisPort = await availablePort()
+    await runCommandCapture('docker', [
+      'run', '--rm', '--detach', '--name', redisContainerName,
+      '--publish', `127.0.0.1:${redisPort}:6379`, 'redis:7.4-alpine',
+    ])
+    redisContainerStarted = true
+    const deadline = Date.now() + 45_000
+    let redisReady = false
+    while (Date.now() < deadline) {
+      try {
+        const pong = await runCommandCapture('docker', ['exec', redisContainerName, 'redis-cli', 'ping'])
+        if (pong === 'PONG') {
+          redisReady = true
+          break
+        }
+      } catch {
+        await delay(350)
+      }
+    }
+    if (!redisReady) throw new Error('The isolated Redis 7.4 container did not become ready.')
+    const redisInfo = await runCommandCapture('docker', [
+      'exec', redisContainerName, 'redis-cli', 'INFO', 'server',
+    ])
+    const redisVersionMatch = /^redis_version:(7\.4\.\d+)/m.exec(redisInfo)
+    if (!redisVersionMatch) {
+      throw new Error('The isolated Redis container did not report version 7.4.')
+    }
+    redisServerVersion = redisVersionMatch[1]
+    console.log(`Isolated Redis server version verified: ${redisServerVersion}; published on loopback only.`)
+    redisSecret = randomBytes(32).toString('hex')
+  }
+
   const mavenCommand = process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : './mvnw'
   const mavenArgs = process.platform === 'win32'
     ? ['/d', '/s', '/c', '.\\mvnw.cmd -B -DskipTests package']
@@ -123,19 +194,31 @@ try {
   const frontendBase = `http://127.0.0.1:${frontendPort}`
   const stubBase = stub.baseUrl
 
-  const backend = startProcess('java', [
+  const backendArgs = [
     '-jar', jarPath,
     '--spring.profiles.active=e2e,local-simulation',
     '--server.address=127.0.0.1',
     `--server.port=${backendPort}`,
     '--app.ant.simulation.enabled=true',
-    '--app.ant.simulation.scenario=SUCCESS',
+    `--app.ant.simulation.scenario=${redisMode ? 'SUCCESS_THEN_TIMEOUT' : 'SUCCESS'}`,
     '--app.ant.simulation.total-points=20',
-    '--app.cache.redis.enabled=false',
     `--integrations.sri.taxpayer-existence-url=${stubBase}/sri/taxpayer-existence`,
     `--integrations.sri.taxpayer-details-url=${stubBase}/sri/taxpayer-details`,
     `--integrations.sri.vehicle-url=${stubBase}/sri/vehicle`,
-  ], { cwd: backendRoot, env: { ...process.env, REDIS_CACHE_ENABLED: 'false' } })
+  ]
+  const backendEnvironment = redisMode
+    ? {
+        ...process.env,
+        REDIS_CACHE_ENABLED: 'true',
+        REDIS_HOST: '127.0.0.1',
+        REDIS_PORT: String(redisPort),
+        REDIS_CACHE_TTL: '5m',
+        REDIS_CACHE_HMAC_SECRET: redisSecret,
+      }
+    : { ...process.env, REDIS_CACHE_ENABLED: 'false' }
+  if (!redisMode) backendArgs.push('--app.cache.redis.enabled=false')
+  else backendArgs.push('--app.cache.redis.enabled=true')
+  const backend = startProcess('java', backendArgs, { cwd: backendRoot, env: backendEnvironment })
   backend.stdout.on('data', chunk => backendOutput.push(chunk.toString()))
   backend.stderr.on('data', chunk => backendOutput.push(chunk.toString()))
   await waitForReady(`${backendBase}/actuator/health`, backend, 'Spring Boot backend')
@@ -157,29 +240,58 @@ try {
 
   await mkdir(evidenceDirectory, { recursive: true })
   const playwrightCli = path.join(frontendRoot, 'node_modules', '@playwright', 'test', 'cli.js')
-  await runCommand(process.execPath, [playwrightCli, 'test', '--config=e2e/ant-demo.playwright.config.ts'], {
+  const playwrightConfig = redisMode
+    ? 'e2e/ant-demo.redis.playwright.config.ts'
+    : 'e2e/ant-demo.playwright.config.ts'
+  const playwrightEnvironment = {
+    ...process.env,
+    E2E_BASE_URL: frontendBase,
+    E2E_ANT_EVIDENCE_PATH: evidencePath,
+    E2E_ANT_EVIDENCE_DIRECTORY: evidenceDirectory,
+    E2E_ANT_REDIS_EVIDENCE_DIRECTORY: evidenceDirectory,
+  }
+  await runCommand(process.execPath, [playwrightCli, 'test', `--config=${playwrightConfig}`], {
     cwd: frontendRoot,
-    env: {
-      ...process.env,
-      E2E_BASE_URL: frontendBase,
-      E2E_ANT_EVIDENCE_PATH: evidencePath,
-    },
-    label: 'Isolated ANT demo Playwright suite',
+    env: playwrightEnvironment,
+    label: redisMode ? 'Redis-backed ANT demo Playwright suite' : 'Isolated ANT demo Playwright suite',
   })
 
   if (stub.getRequestCount() !== 0) throw new Error('The ANT demo unexpectedly invoked an SRI provider adapter.')
   if (backendOutput.join('').includes(syntheticCedula)) {
     throw new Error('Backend logs exposed the synthetic identification during the ANT demo.')
   }
-  console.log('Local ANT demo E2E passed; simulator ran on loopback, SRI stub received no request, and no external service was configured.')
-  console.log('A Playwright screenshot with synthetic data was saved under docs/pruebas/evidencias/ant-demo/.')
+  if (redisSecret && backendOutput.join('').includes(redisSecret)) {
+    throw new Error('Backend logs exposed the temporary HMAC secret during the Redis demo.')
+  }
+  console.log(redisMode
+    ? 'Local ANT demo and Redis recovery E2E passed against an isolated Redis 7.4 container; no external provider was called.'
+    : 'Local ANT demo E2E passed; simulator ran on loopback, SRI stub received no request, and no external service was configured.')
+  console.log(`Synthetic Playwright evidence was saved under ${path.relative(repositoryRoot, evidenceDirectory)}.`)
 } catch (error) {
   console.error(error instanceof Error ? error.message : 'Local ANT demo E2E orchestration failed.')
+  if (backendOutput.length > 0) {
+    const safeDiagnostics = backendOutput.join('').split(/\r?\n/)
+      .filter(line => /APPLICATION FAILED|Exception|Caused by|\bERROR\b|Failed to start|failure analysis/i.test(line))
+      .slice(-20)
+      .map(line => line
+        .replaceAll(syntheticCedula, '[redacted]')
+        .replaceAll(redisSecret ?? '\u0000', '[redacted]')
+        .replace(/(password|hmac-secret)\s*[=:]\s*\S+/gi, '$1=[redacted]'))
+    if (safeDiagnostics.length > 0) console.error(safeDiagnostics.join('\n'))
+  }
   process.exitCode = 1
 } finally {
   await stopChildren()
   if (stub?.server) {
     stub.server.closeAllConnections()
     await new Promise(resolve => stub.server.close(() => resolve()))
+  }
+  if (redisContainerStarted) {
+    try {
+      await runCommandCapture('docker', ['stop', redisContainerName])
+    } catch {
+      console.error('The isolated Redis demo container could not be stopped automatically; stop only the container created for this run.')
+      process.exitCode = 1
+    }
   }
 }
