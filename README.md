@@ -552,6 +552,21 @@ El detalle de esta repetición, sus logs sanitizados y capturas está en el [reg
 
 ![Mensaje de error controlado probado desde el navegador](docs/pruebas/evidencias-final/20261116/frontend/sri/08-error-proveedor.png)
 
+### Verificación de cierre — 16 de noviembre de 2026
+
+En esta ronda se volvieron a ejecutar las pruebas de backend y frontend. La suite ANT se ejecutó contra el simulador local activo, usando su misma configuración Playwright y sin generar otra copia de la galería de capturas.
+
+| Verificación | Resultado de esta ronda |
+|---|---:|
+| Maven Wrapper `verify` | 165 pruebas aprobadas; 0 fallos, 0 errores y 0 omitidas. |
+| Vitest | 35 de 35 pruebas aprobadas. |
+| Lint | Aprobado. |
+| Build de producción | Aprobado. |
+| Playwright E2E SRI | 4 de 4 pruebas aprobadas con stub local. |
+| Playwright ANT | 7 de 7 pruebas aprobadas con el simulador local. |
+
+Estas pruebas no consultaron los servicios reales del SRI ni de la ANT. Las pruebas opcionales contra Redis 7.4 local se documentan por separado en la tabla histórica anterior; no se repitieron en esta ronda.
+
 ## 13. Seguridad y tratamiento de datos
 
 Durante el desarrollo procuramos que las identificaciones y los datos de consulta no se expongan innecesariamente:
@@ -596,6 +611,22 @@ Para revisar cada parte del desarrollo, estos son los documentos principales del
 | [Matriz de rúbrica](docs/evaluacion/matriz-rubrica.md) | Evidencia por criterio, limitaciones y pendientes. |
 | [Diseño de la interfaz](docs/diseno/rediseño-ui-ux.md) | Decisiones visuales y evidencias de la interfaz. |
 | [Recursos visuales](docs/diseno/recursos-visuales.md) | Fuentes, autores y licencias de las fotografías utilizadas. |
+
+## Mejoras recientes de experiencia de usuario (UX)
+
+Los formularios ahora muestran su estado de validación mientras la persona escribe, una vez que ha interactuado con el campo. El correo se revisa localmente, el RUC se valida estructuralmente como trece dígitos ASCII y la placa conserva las reglas de formato existentes. Un indicador verde y un check circular señalan un formato válido; una X roja y un mensaje breve identifican el dato que debe corregirse. El botón de consulta permanece deshabilitado mientras haya campos obligatorios inválidos.
+
+Estas señales permiten corregir errores antes de enviar la solicitud. La validación local del RUC solo comprueba su estructura: no confirma que exista. Esa confirmación corresponde al servicio del SRI y se realiza después de enviar una solicitud válida.
+
+**Validación antes del envío.** La captura usa un correo de ejemplo con dominio reservado `.invalid` y un valor incompleto de prueba. Muestra un campo válido y otro inválido, sin enviar una consulta.
+
+![Formulario con validación visual en tiempo real](docs/diseno/evidencias-ui/validacion-tiempo-real-formularios.png)
+
+### Cambios incorporados recientemente
+
+Además de la validación visual, se ampliaron las pruebas automatizadas para cubrir los estados iniciales, la corrección de los campos y los flujos SRI y ANT simulados. El runner de usabilidad aísla una copia temporal del JAR por sesión; así, una reconstrucción de Maven no modifica el archivo que está usando Spring Boot durante la prueba manual.
+
+Las consultas SRI continúan probándose con un stub local. La ANT real sigue sin una respuesta funcional verificada; su demostración, cuando se activa en desarrollo, presenta datos `SIMULATED` y no información oficial. La recuperación `CACHE` se ha demostrado con el simulador y Redis local, no ante una caída real de ANT. La guía de usabilidad está preparada, pero todavía no se ha realizado una sesión con una persona participante ni se han registrado tiempos u observaciones.
 
 ---
 
