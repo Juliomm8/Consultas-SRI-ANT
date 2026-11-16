@@ -58,7 +58,7 @@ export function SiteHeader({
           <a href="#estado-ant" onClick={() => closeMenu()}>Estado ANT</a>
           {antDemoAvailable && (
             <button className="nav-demo-link" type="button" onClick={() => { onOpenAntDemo(); closeMenu() }}>
-              Demo local
+              Demostración ANT
             </button>
           )}
           <a className="site-nav__cta" href="#consulta" onClick={() => closeMenu()}>

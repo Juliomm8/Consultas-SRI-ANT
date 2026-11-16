@@ -80,7 +80,8 @@ describe('Portal de consultas', () => {
     expect(screen.queryByLabelText(/cédula|pasaporte|identificación/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/resultado de puntos/i)).not.toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
-    expect(screen.queryByRole('button', { name: 'Abrir demostración ANT' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Demostración ANT' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Simular consulta ANT' })).not.toBeInTheDocument()
   })
 
   it('valida email y RUC antes de enviar', async () => {

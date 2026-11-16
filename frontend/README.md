@@ -111,11 +111,30 @@ mecanismo autorizado. El estado técnico está descrito en
 ### Demostración local opt-in
 
 Existe una vista independiente para probar los estados del backend simulado.
-No se incluye en el build de producción y solo aparece en modo desarrollo con
-`VITE_ANT_DEMO=true`. La vista acepta únicamente el fixture sintético fijo
+En Home aparece como **Demostración ANT** en la navegación y como **Simular
+consulta ANT** en la tarjeta del servicio solo cuando Vite está en modo
+desarrollo y `VITE_ANT_DEMO=true`. El componente de la demo se abre dentro de
+`App.tsx` y tiene el botón **Volver al inicio**; no usa una ruta de React
+Router. La build de producción no muestra esos accesos ni permite abrir la
+vista, aunque puede conservar la etiqueta condicional del botón en el bundle.
+
+Para habilitarla, establece la variable antes de iniciar Vite y reinicia el
+servidor si ya estaba ejecutándose:
+
+```powershell
+$env:VITE_ANT_DEMO = 'true'
+$env:VITE_API_PROXY_TARGET = 'http://127.0.0.1:8080'
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+```
+
+En una terminal aparte, el backend debe ejecutarse con el perfil
+`local-simulation`. La vista acepta únicamente el fixture sintético fijo
 `0000000000`, llama al endpoint local protegido por el perfil backend
 `local-simulation`, y siempre muestra que el resultado es `SIMULATED` y no
-oficial. No se conecta a ANT ni muestra datos de caché simulados. Consulta
+oficial. No se conecta a ANT. Cuando se habilita Redis exclusivamente para la
+demo local, también puede mostrar una respuesta `CACHE` con procedencia
+`SIMULATED`, claramente advertida como sintética y posiblemente desactualizada.
+Consulta
 [`docs/pruebas/demo-ant-local.md`](../docs/pruebas/demo-ant-local.md) para los
 comandos, escenarios y evidencia Playwright.
 

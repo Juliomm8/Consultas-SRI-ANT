@@ -34,7 +34,7 @@ test('real Redis backs simulated success and timeout recovery through React and 
 
   await page.goto('/')
   await expect(page.getByRole('heading', { name: /consulta de contribuyente/i })).toBeVisible()
-  await page.getByRole('button', { name: 'Demo local' }).click()
+  await page.getByRole('button', { name: 'Demostración ANT' }).click()
   await expect(page.getByRole('note', { name: 'Aviso permanente de simulación' }))
     .toContainText('MODO DEMOSTRACIÓN — DATOS SIMULADOS — NO OFICIALES')
 

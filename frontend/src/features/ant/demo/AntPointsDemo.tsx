@@ -124,7 +124,7 @@ export function AntPointsDemo({ onBack }: { onBack: () => void }) {
   return (
     <main className="ant-demo-page" aria-labelledby="ant-demo-title">
       <button className="button button--quiet ant-demo-back" type="button" onClick={onBack}>
-        ← Volver al portal
+        ← Volver al inicio
       </button>
       <section className="ant-demo-panel">
         <div className="ant-demo-banner" role="note" aria-label="Aviso permanente de simulación">

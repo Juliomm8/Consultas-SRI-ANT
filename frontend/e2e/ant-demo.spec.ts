@@ -39,7 +39,10 @@ async function openDemo(page: Page) {
     'href',
     'https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor',
   )
-  await page.getByRole('button', { name: 'Demo local' }).click()
+  await expect(page.getByRole('button', { name: 'Demostración ANT' })).toBeVisible()
+  const homeDemoButton = page.getByRole('button', { name: 'Simular consulta ANT' })
+  await expect(homeDemoButton).toBeVisible()
+  await homeDemoButton.click()
   await expect(page.getByRole('note', { name: 'Aviso permanente de simulación' }))
     .toContainText('MODO DEMOSTRACIÓN — DATOS SIMULADOS — NO OFICIALES')
 }
@@ -105,6 +108,12 @@ test('la demo ANT recorre React, Vite, Spring Boot y el simulador local', async 
   expect(consoleMessages.some(message => message.includes(syntheticCedula))).toBe(false)
   expect(externalRequestObserved).toBe(false)
   await captureEvidence(page, '09-ant-simulado.png')
+
+  await page.getByRole('button', { name: /volver al inicio/i }).click()
+  await expect(page.getByRole('heading', { name: /consulta de contribuyente/i })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Demostración ANT' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Simular consulta ANT' })).toBeVisible()
+  await expect(page.getByRole('note', { name: 'Aviso permanente de simulación' })).toHaveCount(0)
 })
 
 test('presenta cero puntos como resultado simulado distinto a la ausencia', async ({ page }) => {

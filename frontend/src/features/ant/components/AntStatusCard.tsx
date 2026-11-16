@@ -26,7 +26,7 @@ export function AntStatusCard({
           </a>
           {antDemoAvailable && onOpenAntDemo && (
             <button className="text-link ant-demo-open" type="button" onClick={onOpenAntDemo}>
-              Abrir simulación académica <PortalIcon name="arrow-right" />
+              Simular consulta ANT <PortalIcon name="arrow-right" />
             </button>
           )}
         </div>
