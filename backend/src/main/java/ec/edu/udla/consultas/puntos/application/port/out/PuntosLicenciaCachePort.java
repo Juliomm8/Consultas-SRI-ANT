@@ -6,13 +6,13 @@ import ec.edu.udla.consultas.puntos.domain.ResultadoPuntosLicencia;
 import java.util.Optional;
 
 /**
- * Output port for retaining the latest validated ANT result, keyed by the
+ * Output port for retaining the latest validated official ANT result, keyed by the
  * cédula supplied to the official consultation flow. This contract does not
  * derive cédulas from RUCs.
  */
 public interface PuntosLicenciaCachePort {
 
-    /** Only a validated result whose source is ANT may be saved. */
+    /** Only a validated result whose source and origin are ANT may be saved. */
     void guardarResultado(Cedula cedula, ResultadoPuntosLicencia resultado);
 
     /**

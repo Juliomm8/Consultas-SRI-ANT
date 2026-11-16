@@ -27,12 +27,22 @@ public final class RedisPuntosLicenciaCacheAdapter implements PuntosLicenciaCach
     private final ObjectMapper objectMapper;
     private final HmacCacheKeyFactory keyFactory;
     private final Duration ttl;
+    private final FuentePuntosLicencia acceptedSource;
 
     RedisPuntosLicenciaCacheAdapter(
             StringRedisTemplate redis,
             ObjectMapper objectMapper,
             HmacCacheKeyFactory keyFactory,
             Duration ttl) {
+        this(redis, objectMapper, keyFactory, ttl, FuentePuntosLicencia.ANT);
+    }
+
+    RedisPuntosLicenciaCacheAdapter(
+            StringRedisTemplate redis,
+            ObjectMapper objectMapper,
+            HmacCacheKeyFactory keyFactory,
+            Duration ttl,
+            FuentePuntosLicencia acceptedSource) {
         this.redis = Objects.requireNonNull(redis, "La plantilla Redis es obligatoria.");
         this.objectMapper = Objects.requireNonNull(objectMapper, "El serializador JSON es obligatorio.");
         this.keyFactory = Objects.requireNonNull(keyFactory, "El generador de claves es obligatorio.");
@@ -40,13 +50,17 @@ public final class RedisPuntosLicenciaCacheAdapter implements PuntosLicenciaCach
             throw new IllegalArgumentException("El TTL de caché debe ser positivo.");
         }
         this.ttl = ttl;
+        if (acceptedSource != FuentePuntosLicencia.ANT && acceptedSource != FuentePuntosLicencia.SIMULATED) {
+            throw new IllegalArgumentException("La caché debe aislar ANT o SIMULATED.");
+        }
+        this.acceptedSource = acceptedSource;
     }
 
     @Override
     public void guardarResultado(Cedula cedula, ResultadoPuntosLicencia resultado) {
         Objects.requireNonNull(cedula, "La cédula es obligatoria.");
         Objects.requireNonNull(resultado, "El resultado es obligatorio.");
-        if (resultado.fuente() != FuentePuntosLicencia.ANT) {
+        if (resultado.fuente() != acceptedSource || resultado.originSource() != acceptedSource) {
             throw new PuntosLicenciaCacheException(PuntosLicenciaCacheException.Kind.INVALID_RESULT);
         }
         String key = keyFactory.keyFor(cedula);
@@ -96,12 +110,12 @@ public final class RedisPuntosLicenciaCacheAdapter implements PuntosLicenciaCach
             if (totalPuntos == null || !totalPuntos.isIntegralNumber() || !totalPuntos.canConvertToInt()
                     || totalPuntos.intValue() < 0 || fetchedAtNode == null || !fetchedAtNode.isTextual()
                     || sourceNode == null || !sourceNode.isTextual()
-                    || !FuentePuntosLicencia.ANT.name().equals(sourceNode.textValue())) {
+                    || !acceptedSource.name().equals(sourceNode.textValue())) {
                 throw new IllegalArgumentException("Entrada de caché incompatible.");
             }
             Instant fetchedAt = Instant.parse(fetchedAtNode.textValue());
             return Optional.of(new ResultadoPuntosLicencia(
-                    totalPuntos.intValue(), fetchedAt, FuentePuntosLicencia.CACHE));
+                    totalPuntos.intValue(), fetchedAt, FuentePuntosLicencia.CACHE, acceptedSource));
         } catch (JsonProcessingException | IllegalArgumentException exception) {
             logFailure("read", "invalid_entry", exception);
             throw new PuntosLicenciaCacheException(PuntosLicenciaCacheException.Kind.INVALID_ENTRY);

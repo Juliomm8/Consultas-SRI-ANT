@@ -25,4 +25,18 @@ class HmacCacheKeyFactoryTests {
         assertThat(secondKey).matches("consultas-sri-ant:ant-points:v2:[a-f0-9]{64}")
                 .doesNotContain(firstCedula.value(), secondCedula.value());
     }
+
+    @Test
+    void keepsAntAndSimulationNamespacesIndependentForTheSameCedula() {
+        Cedula cedula = new Cedula("0000000000");
+        String antKey = keyFactory.keyFor(cedula);
+        String simulationKey = new HmacCacheKeyFactory(
+                "synthetic-test-hmac-secret-value-00000000000000000000000000000000",
+                HmacCacheKeyFactory.SIMULATION_KEY_PREFIX).keyFor(cedula);
+
+        assertThat(antKey).startsWith("consultas-sri-ant:ant-points:v2:");
+        assertThat(simulationKey).startsWith("consultas-sri-ant:ant-points:simulation:v1:");
+        assertThat(simulationKey).doesNotContain(cedula.value());
+        assertThat(antKey).isNotEqualTo(simulationKey);
+    }
 }

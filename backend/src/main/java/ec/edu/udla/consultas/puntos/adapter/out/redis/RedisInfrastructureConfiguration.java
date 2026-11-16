@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
@@ -37,12 +38,13 @@ public class RedisInfrastructureConfiguration {
         return new LettuceConnectionFactory(redisServer, clientBuilder.build());
     }
 
-    @Bean
+    @Bean(name = {"redisTemplate", "pointsStringRedisTemplate"})
     public StringRedisTemplate pointsStringRedisTemplate(LettuceConnectionFactory connectionFactory) {
         return new StringRedisTemplate(connectionFactory);
     }
 
     @Bean
+    @Profile("!local-simulation")
     public PuntosLicenciaCachePort puntosLicenciaCachePort(
             StringRedisTemplate redis,
             ObjectMapper objectMapper,

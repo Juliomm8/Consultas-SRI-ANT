@@ -11,15 +11,25 @@ import java.util.HexFormat;
 final class HmacCacheKeyFactory {
 
     private static final String ALGORITHM = "HmacSHA256";
-    private static final String KEY_PREFIX = "consultas-sri-ant:ant-points:v2:";
+    static final String ANT_KEY_PREFIX = "consultas-sri-ant:ant-points:v2:";
+    static final String SIMULATION_KEY_PREFIX = "consultas-sri-ant:ant-points:simulation:v1:";
 
     private final byte[] secret;
+    private final String keyPrefix;
 
     HmacCacheKeyFactory(String secret) {
+        this(secret, ANT_KEY_PREFIX);
+    }
+
+    HmacCacheKeyFactory(String secret, String keyPrefix) {
         if (secret == null || secret.isBlank()) {
             throw new IllegalArgumentException("La clave HMAC es obligatoria.");
         }
+        if (keyPrefix == null || keyPrefix.isBlank()) {
+            throw new IllegalArgumentException("El namespace de caché es obligatorio.");
+        }
         this.secret = secret.getBytes(StandardCharsets.UTF_8);
+        this.keyPrefix = keyPrefix;
     }
 
     String keyFor(Cedula cedula) {
@@ -30,7 +40,7 @@ final class HmacCacheKeyFactory {
             Mac mac = Mac.getInstance(ALGORITHM);
             mac.init(new SecretKeySpec(secret, ALGORITHM));
             byte[] digest = mac.doFinal(cedula.value().getBytes(StandardCharsets.UTF_8));
-            return KEY_PREFIX + HexFormat.of().formatHex(digest);
+            return keyPrefix + HexFormat.of().formatHex(digest);
         } catch (GeneralSecurityException exception) {
             throw new IllegalStateException("HMAC-SHA-256 no está disponible en este entorno.");
         }

@@ -46,6 +46,12 @@ class RedisPuntosLicenciaCacheAdapterTests {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RedisPuntosLicenciaCacheAdapter adapter = new RedisPuntosLicenciaCacheAdapter(
             redis, objectMapper, new HmacCacheKeyFactory(HMAC_SECRET), TTL);
+    private final RedisSimulatedPuntosLicenciaCacheAdapter simulationAdapter =
+            new RedisSimulatedPuntosLicenciaCacheAdapter(
+                    redis,
+                    objectMapper,
+                    new HmacCacheKeyFactory(HMAC_SECRET, HmacCacheKeyFactory.SIMULATION_KEY_PREFIX),
+                    TTL);
     private final Logger logger = (Logger) LoggerFactory.getLogger(RedisPuntosLicenciaCacheAdapter.class);
     private ListAppender<ILoggingEvent> logAppender;
     private Level previousLevel;
@@ -102,6 +108,7 @@ class RedisPuntosLicenciaCacheAdapterTests {
         assertThat(result.orElseThrow().totalPuntos()).isEqualTo(TOTAL_PUNTOS);
         assertThat(result.orElseThrow().fetchedAt()).isEqualTo(FETCHED_AT);
         assertThat(result.orElseThrow().fuente()).isEqualTo(FuentePuntosLicencia.CACHE);
+        assertThat(result.orElseThrow().originSource()).isEqualTo(FuentePuntosLicencia.ANT);
     }
 
     @Test
@@ -116,6 +123,50 @@ class RedisPuntosLicenciaCacheAdapterTests {
         Throwable failure = catchThrowable(() -> adapter.guardarResultado(
                 CEDULA,
                 new ResultadoPuntosLicencia(TOTAL_PUNTOS, FETCHED_AT, FuentePuntosLicencia.SIMULATED)));
+
+        assertThat(failure)
+                .isInstanceOf(PuntosLicenciaCacheException.class)
+                .extracting(exception -> ((PuntosLicenciaCacheException) exception).kind())
+                .isEqualTo(PuntosLicenciaCacheException.Kind.INVALID_RESULT);
+        verify(values, never()).set(anyString(), anyString(), eq(TTL));
+    }
+
+    @Test
+    void storesAndRecoversSimulatedResultsOnlyInTheIndependentNamespace() throws Exception {
+        simulationAdapter.guardarResultado(
+                CEDULA,
+                new ResultadoPuntosLicencia(0, FETCHED_AT, FuentePuntosLicencia.SIMULATED));
+
+        org.mockito.ArgumentCaptor<String> keyCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+        org.mockito.ArgumentCaptor<String> valueCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(values).set(keyCaptor.capture(), valueCaptor.capture(), eq(TTL));
+        String simulationKey = keyCaptor.getValue();
+        String simulationDocument = valueCaptor.getValue();
+        assertThat(simulationKey).matches("consultas-sri-ant:ant-points:simulation:v1:[a-f0-9]{64}")
+                .doesNotContain(CEDULA.value());
+        assertThat(simulationDocument).doesNotContain(CEDULA.value());
+        JsonNode stored = objectMapper.readTree(simulationDocument);
+        assertThat(stored.size()).isEqualTo(3);
+        assertThat(stored.path("totalPuntos").asInt()).isZero();
+        assertThat(stored.path("fetchedAt").asText()).isEqualTo(FETCHED_AT.toString());
+        assertThat(stored.path("source").asText()).isEqualTo(FuentePuntosLicencia.SIMULATED.name());
+
+        when(values.get(simulationKey)).thenReturn(simulationDocument);
+        var recovered = simulationAdapter.obtenerUltimoResultado(CEDULA).orElseThrow();
+        assertThat(recovered.totalPuntos()).isZero();
+        assertThat(recovered.fetchedAt()).isEqualTo(FETCHED_AT);
+        assertThat(recovered.fuente()).isEqualTo(FuentePuntosLicencia.CACHE);
+        assertThat(recovered.originSource()).isEqualTo(FuentePuntosLicencia.SIMULATED);
+
+        assertThat(new HmacCacheKeyFactory(HMAC_SECRET).keyFor(CEDULA)).isNotEqualTo(simulationKey);
+        assertThat(adapter.obtenerUltimoResultado(CEDULA)).isEmpty();
+    }
+
+    @Test
+    void simulatedCacheRejectsOfficialAntResults() {
+        Throwable failure = catchThrowable(() -> simulationAdapter.guardarResultado(
+                CEDULA,
+                new ResultadoPuntosLicencia(TOTAL_PUNTOS, FETCHED_AT, FuentePuntosLicencia.ANT)));
 
         assertThat(failure)
                 .isInstanceOf(PuntosLicenciaCacheException.class)
@@ -265,6 +316,7 @@ class RedisPuntosLicenciaCacheAdapterTests {
         assertThat(recovered).hasValueSatisfying(result -> {
             assertThat(result.totalPuntos()).isZero();
             assertThat(result.fuente()).isEqualTo(FuentePuntosLicencia.CACHE);
+            assertThat(result.originSource()).isEqualTo(FuentePuntosLicencia.ANT);
         });
     }
 }
