@@ -32,6 +32,7 @@ public class AntSimulationProperties {
         TIMEOUT,
         UNAVAILABLE,
         INVALID_RESPONSE,
-        RECOVERY
+        RECOVERY,
+        SUCCESS_THEN_TIMEOUT
     }
 }

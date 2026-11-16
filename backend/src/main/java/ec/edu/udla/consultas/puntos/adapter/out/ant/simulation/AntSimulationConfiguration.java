@@ -4,6 +4,7 @@ import ec.edu.udla.consultas.puntos.adapter.out.ant.ResilientPuntosLicenciaConsu
 import ec.edu.udla.consultas.puntos.application.port.in.ConsultarPuntosLicenciaUseCase;
 import ec.edu.udla.consultas.puntos.application.port.out.PuntosLicenciaCachePort;
 import ec.edu.udla.consultas.puntos.application.port.out.PuntosLicenciaConsultaPort;
+import ec.edu.udla.consultas.puntos.application.port.out.PuntosLicenciaSimulationCachePort;
 import ec.edu.udla.consultas.puntos.application.service.ConsultarPuntosLicenciaService;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -40,7 +41,8 @@ public class AntSimulationConfiguration {
     @Bean
     public ConsultarPuntosLicenciaUseCase consultarPuntosLicenciaUseCase(
             PuntosLicenciaConsultaPort provider,
-            Optional<PuntosLicenciaCachePort> cache) {
-        return new ConsultarPuntosLicenciaService(provider, cache);
+            Optional<PuntosLicenciaCachePort> antCache,
+            Optional<PuntosLicenciaSimulationCachePort> simulationCache) {
+        return new ConsultarPuntosLicenciaService(provider, antCache, simulationCache);
     }
 }

@@ -55,7 +55,14 @@ public final class SimulatedAntPuntosLicenciaAdapter implements PuntosLicenciaCo
             case RECOVERY -> invocation == 1
                     ? throwUnavailable()
                     : Optional.of(success(properties.getTotalPoints()));
+            case SUCCESS_THEN_TIMEOUT -> invocation == 1
+                    ? Optional.of(success(properties.getTotalPoints()))
+                    : throwTimeout();
         };
+    }
+
+    private Optional<ResultadoPuntosLicencia> throwTimeout() {
+        throw new PuntosLicenciaProviderException(PuntosLicenciaProviderException.Kind.TIMEOUT);
     }
 
     private Optional<ResultadoPuntosLicencia> throwUnavailable() {

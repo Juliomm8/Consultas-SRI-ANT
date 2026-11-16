@@ -69,6 +69,17 @@ class SimulatedAntPuntosLicenciaAdapterTests {
         });
     }
 
+    @Test
+    void succeedsOnceThenThrowsAnImmediateTimeoutWithoutSleeping() {
+        var adapter = new SimulatedAntPuntosLicenciaAdapter(
+                properties(AntSimulationProperties.Scenario.SUCCESS_THEN_TIMEOUT, 21), CLOCK);
+
+        var first = adapter.consultar(CEDULA).orElseThrow();
+        assertThat(first.totalPuntos()).isEqualTo(21);
+        assertThat(first.fuente()).isEqualTo(FuentePuntosLicencia.SIMULATED);
+        assertProviderFailure(adapter, PuntosLicenciaProviderException.Kind.TIMEOUT);
+    }
+
     private static void assertProviderFailure(
             SimulatedAntPuntosLicenciaAdapter adapter,
             PuntosLicenciaProviderException.Kind kind) {
