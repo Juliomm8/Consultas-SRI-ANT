@@ -50,6 +50,7 @@ class PuntosLicenciaRestControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.totalPuntos").value(20))
                 .andExpect(jsonPath("$.meta.source").value("SIMULATED"))
+                .andExpect(jsonPath("$.meta.originSource").value("SIMULATED"))
                 .andExpect(jsonPath("$.meta.stale").value(false))
                 .andExpect(jsonPath("$.meta.fetchedAt").isNotEmpty())
                 .andExpect(jsonPath("$.meta.warning").value(

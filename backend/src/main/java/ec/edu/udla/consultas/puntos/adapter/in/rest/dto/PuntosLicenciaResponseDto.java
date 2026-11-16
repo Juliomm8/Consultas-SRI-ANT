@@ -11,6 +11,7 @@ public record PuntosLicenciaResponseDto(Data data, Meta meta) {
     public record Meta(
             String requestId,
             String source,
+            String originSource,
             Instant retrievedAt,
             Instant fetchedAt,
             boolean stale,

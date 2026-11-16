@@ -44,6 +44,7 @@ public class PuntosLicenciaRestController {
                 new PuntosLicenciaResponseDto.Meta(
                         value,
                         result.source().name(),
+                        result.originSource().name(),
                         Instant.now(),
                         result.fetchedAt(),
                         result.stale(),
