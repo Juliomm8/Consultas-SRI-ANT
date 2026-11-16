@@ -20,6 +20,7 @@ function successEnvelope(totalPuntos = 18, source = 'SIMULATED') {
     meta: {
       requestId,
       source,
+      originSource: source === 'CACHE' ? 'SIMULATED' : source,
       retrievedAt: '2026-11-15T16:00:00Z',
       fetchedAt: '2026-11-15T16:00:00Z',
       stale: false,
@@ -28,8 +29,20 @@ function successEnvelope(totalPuntos = 18, source = 'SIMULATED') {
   }
 }
 
+function cacheEnvelope(totalPuntos = 13) {
+  return {
+    ...successEnvelope(totalPuntos, 'CACHE'),
+    meta: {
+      ...successEnvelope(totalPuntos, 'CACHE').meta,
+      stale: true,
+      fetchedAt: '2026-10-01T12:30:00Z',
+      warning: 'ANT no respondió; el último resultado guardado puede estar desactualizado.',
+    },
+  }
+}
+
 async function submitSyntheticCedula(user: ReturnType<typeof userEvent.setup>) {
-  const input = screen.getByLabelText('Identificación sintética')
+  const input = screen.getByLabelText('Cédula sintética')
   await user.clear(input)
   await user.type(input, syntheticCedula)
   expect(input).toHaveValue(syntheticCedula)
@@ -79,7 +92,7 @@ describe('demostración local de puntos ANT', () => {
     expect(result).toHaveTextContent('no proviene de la ANT')
     expect(result).toHaveTextContent(requestId)
     expect(result).not.toHaveTextContent(syntheticCedula)
-    expect(screen.getByLabelText('Identificación sintética')).toHaveValue('')
+    expect(screen.getByLabelText('Cédula sintética')).toHaveValue('')
     const [url, options] = fetchMock.mock.calls[0] ?? []
     expect(url).toBe('/api/v1/licencias/puntos/consultas')
     expect(options?.method).toBe('POST')
@@ -142,7 +155,7 @@ describe('demostración local de puntos ANT', () => {
 
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent('Servicio simulado no disponible')
-    expect(alert).toHaveTextContent('El servicio de puntos de licencia no está disponible.')
+    expect(alert).toHaveTextContent('no se pudo recuperar un resultado previo desde la caché')
     expect(alert).toHaveTextContent(requestId)
     expect(alert).not.toHaveTextContent(syntheticCedula)
     expect(alert).not.toHaveTextContent('detalle privado')
@@ -167,7 +180,28 @@ describe('demostración local de puntos ANT', () => {
     expect(alert).toHaveTextContent('No se pudo conectar con el backend local de demostración.')
   })
 
-  it('no expone cuerpos externos ni acepta una fuente que no sea SIMULATED', async () => {
+  it('muestra CACHE como dato antiguo y mantiene el aviso de simulación local', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockResolvedValueOnce(jsonResponse(cacheEnvelope()))
+    render(<AntPointsDemo onBack={() => undefined} />)
+
+    await submitSyntheticCedula(user)
+
+    const result = await screen.findByRole('status', { name: 'Resultado recuperado desde caché' })
+    expect(result).toHaveTextContent('CACHE')
+    expect(result).toHaveTextContent('Último resultado disponible')
+    expect(result).toHaveTextContent('13')
+    expect(result).toHaveTextContent('Información posiblemente desactualizada')
+    expect(result).toHaveTextContent('origen SIMULATED')
+    expect(result).toHaveTextContent('no es oficial de ANT')
+    expect(result).toHaveTextContent('2026')
+    expect(result).toHaveTextContent('SIMULATED')
+    expect(result).not.toHaveTextContent(syntheticCedula)
+    expect(screen.getByRole('note', { name: 'Aviso permanente de simulación' }))
+      .toHaveTextContent('NO OFICIALES')
+  })
+
+  it('no expone cuerpos externos ni acepta una fuente o metadata incompatibles', async () => {
     const user = userEvent.setup()
     fetchMock.mockResolvedValueOnce(jsonResponse({
       error: { code: 'PROVIDER_BAD_RESPONSE', message: `external body ${syntheticCedula}`, requestId },
@@ -180,22 +214,44 @@ describe('demostración local de puntos ANT', () => {
     expect(alert).not.toHaveTextContent(syntheticCedula)
     expect(alert).not.toHaveTextContent('external body')
 
-    fetchMock.mockResolvedValueOnce(jsonResponse(successEnvelope(14, 'CACHE')))
+    fetchMock.mockResolvedValueOnce(jsonResponse(successEnvelope(14, 'ANT')))
     await submitSyntheticCedula(user)
     alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent('La respuesta no coincide con el contrato local de simulación.')
-    expect(screen.queryByRole('status', { name: 'Resultado simulado' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Resultado recuperado desde caché' })).not.toBeInTheDocument()
+  })
+
+  it('rechaza CACHE sin procedencia simulada explícita y combinaciones incoherentes', async () => {
+    const user = userEvent.setup()
+    const invalidCache = cacheEnvelope()
+    invalidCache.meta.originSource = 'ANT'
+    fetchMock.mockResolvedValueOnce(jsonResponse(invalidCache))
+    render(<AntPointsDemo onBack={() => undefined} />)
+    await submitSyntheticCedula(user)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'La respuesta no coincide con el contrato local de simulación.',
+    )
+    expect(screen.queryByRole('status', { name: 'Resultado recuperado desde caché' })).not.toBeInTheDocument()
+
+    const inconsistent = successEnvelope()
+    inconsistent.meta.stale = true
+    fetchMock.mockResolvedValueOnce(jsonResponse(inconsistent))
+    await submitSyntheticCedula(user)
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'La respuesta no coincide con el contrato local de simulación.',
+    )
   })
 
   it('rechaza formato inválido sin enviar ni conservar el dato', async () => {
     const user = userEvent.setup()
     render(<AntPointsDemo onBack={() => undefined} />)
-    await user.type(screen.getByLabelText('Identificación sintética'), '123')
+    await user.type(screen.getByLabelText('Cédula sintética'), '123')
     await user.click(screen.getByRole('button', { name: /consultar escenario local/i }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('fixture sintético 0000000000')
     expect(fetchMock).not.toHaveBeenCalled()
-    expect(screen.getByLabelText('Identificación sintética')).toHaveValue('')
+    expect(screen.getByLabelText('Cédula sintética')).toHaveValue('')
     expect(screen.queryByText('123')).not.toBeInTheDocument()
   })
 })

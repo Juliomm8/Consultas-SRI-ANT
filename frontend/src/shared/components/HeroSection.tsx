@@ -4,15 +4,15 @@ export function HeroSection() {
   return (
     <section className="hero" id="inicio" aria-labelledby="page-title" tabIndex={-1}>
       <div className="hero__content">
-        <p className="eyebrow"><span className="eyebrow__rule" /> Información pública, en contexto</p>
-        <h1 id="page-title">Consulta con <em>claridad.</em></h1>
+        <p className="eyebrow"><span className="eyebrow__rule" /> Consultas SRI · ANT</p>
+        <h1 id="page-title">Información útil,<br /><em>sin rodeos.</em></h1>
         <p className="hero__description">
-          Reúne la información disponible de contribuyentes y vehículos en una experiencia sencilla, ordenada y transparente sobre sus alcances.
+          Consulta la información disponible de contribuyentes y vehículos con un recorrido claro y alcances explicados desde el inicio.
         </p>
         <a className="button button--gold" href="#consulta">
-          Comenzar consulta <PortalIcon name="arrow-right" />
+          Iniciar consulta <PortalIcon name="arrow-right" />
         </a>
-        <p className="hero__privacy"><PortalIcon name="shield" /> El correo se valida aquí; no se envía al SRI.</p>
+        <p className="hero__privacy"><PortalIcon name="shield" /> Proyecto académico independiente · no es un portal oficial.</p>
       </div>
       <figure className="hero__visual">
         <picture>
@@ -27,10 +27,10 @@ export function HeroSection() {
           />
         </picture>
         <span className="hero__shade" aria-hidden="true" />
-        <figcaption className="hero__location"><span /> Sierra ecuatoriana</figcaption>
-        <div className="hero__service-note" role="note" aria-label="Dos consultas SRI disponibles">
-          <span className="hero__service-note-icon"><PortalIcon name="spark" /></span>
-          <span><strong>Dos servicios SRI</strong><small>Contribuyentes y vehículos</small></span>
+        <figcaption className="hero__location">Paisaje andino · Ecuador</figcaption>
+        <div className="hero__service-note" role="note">
+          <span className="hero__service-note-icon"><PortalIcon name="file" /></span>
+          <span><strong>Tres operaciones SRI</strong><small>Registro, contribuyente y vehículo</small></span>
         </div>
       </figure>
     </section>

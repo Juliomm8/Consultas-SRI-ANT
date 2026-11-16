@@ -12,6 +12,7 @@ export interface PuntosDemoData {
 export interface PuntosDemoMeta {
   requestId: string
   source: string
+  originSource: string
   retrievedAt: string
   fetchedAt: string
   stale: boolean
@@ -23,7 +24,7 @@ const safePointsErrorMessages: Readonly<Record<string, string>> = {
   MALFORMED_JSON: 'No se pudo procesar la solicitud de demostración.',
   NOT_FOUND: 'El escenario simulado no contiene información de puntos.',
   PROVIDER_BAD_RESPONSE: 'El servicio de puntos de licencia devolvió una respuesta no utilizable.',
-  PROVIDER_UNAVAILABLE: 'El servicio de puntos de licencia no está disponible.',
+  PROVIDER_UNAVAILABLE: 'El servicio de puntos de licencia no está disponible y no se pudo recuperar un resultado previo desde la caché.',
   PROVIDER_TIMEOUT: 'El servicio de puntos de licencia excedió el tiempo de espera.',
   INTERNAL_ERROR: 'Ocurrió un error interno en la demostración.',
   INVALID_API_RESPONSE: 'El backend local devolvió una respuesta incompatible con la demostración.',

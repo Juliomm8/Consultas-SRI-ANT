@@ -35,10 +35,10 @@ export function ConsultationFlow({
       <header className="consultation-intro">
         <div>
           <p className="eyebrow eyebrow--ink"><span className="eyebrow__rule" /> Consulta SRI</p>
-          <h2 id="consultation-title">Un recorrido, dos etapas.</h2>
+          <h2 id="consultation-title">Empezar una consulta</h2>
           <p>La búsqueda de vehículos se habilita después de confirmar una persona natural en el SRI.</p>
         </div>
-        <p className="consultation-intro__note"><strong>01 / 02</strong><span>Contribuyente → Vehículo</span></p>
+        <p className="consultation-intro__note">Dos pasos SRI · ANT es independiente</p>
       </header>
 
       <ConsultationProgress taxpayerComplete={Boolean(taxpayerResult)} vehicleComplete={Boolean(vehicleResult)} />
@@ -48,9 +48,8 @@ export function ConsultationFlow({
           <section className="workflow-panel" aria-labelledby="taxpayer-title">
             <div className="workflow-panel__heading">
               <div className="workflow-panel__title-wrap">
-                <span className="workflow-panel__step" aria-hidden="true">01</span>
                 <div>
-                  <p className="workflow-panel__eyebrow">PRIMERA ETAPA</p>
+                  <p className="workflow-panel__eyebrow">Consulta SRI</p>
                   <h3 id="taxpayer-title" tabIndex={-1}>Consulta de contribuyente</h3>
                   <p>Ingresa correo y RUC para consultar la información disponible.</p>
                 </div>
@@ -68,9 +67,8 @@ export function ConsultationFlow({
             <section className="workflow-panel workflow-panel--vehicle" aria-labelledby="vehicle-title">
               <div className="workflow-panel__heading">
                 <div className="workflow-panel__title-wrap">
-                  <span className="workflow-panel__step" aria-hidden="true">02</span>
                   <div>
-                    <p className="workflow-panel__eyebrow">SEGUNDA ETAPA</p>
+                  <p className="workflow-panel__eyebrow">Después de validar</p>
                     <h3 id="vehicle-title" tabIndex={-1}>Consulta de vehículo</h3>
                     <p>Busca los datos disponibles en el SRI mediante la placa.</p>
                   </div>
@@ -91,9 +89,8 @@ export function ConsultationFlow({
           )}
 
           {!taxpayerResult && (
-            <div className="next-step-card" aria-label="Siguiente etapa bloqueada">
-              <span className="next-step-card__number">02</span>
-              <div><strong>Después: consulta de vehículo</strong><p>Se habilita al confirmar la clasificación requerida.</p></div>
+            <div className="next-step-card" aria-label="Consulta de vehículo disponible después de validar">
+              <div><strong>Luego podrás consultar un vehículo</strong><p>La etapa se habilita al confirmar la clasificación requerida.</p></div>
               <span className="next-step-card__lock" aria-hidden="true"><PortalIcon name="shield" /></span>
             </div>
           )}
@@ -104,10 +101,10 @@ export function ConsultationFlow({
             <p className="eyebrow eyebrow--ink"><span className="eyebrow__rule" /> Cómo funciona</p>
             <h3 id="guide-title">Primero confirmamos. Después avanzas.</h3>
             <p>El resultado del SRI determina si puedes continuar a la consulta vehicular.</p>
-            <ol className="guide-list">
-              <li><span>01</span><div><strong>Contribuyente</strong><small>Correo y RUC · clasificación</small></div></li>
-              <li><span>02</span><div><strong>Vehículo</strong><small>Consulta disponible por placa</small></div></li>
-            </ol>
+            <ul className="guide-list">
+              <li><span className="guide-list__marker" aria-hidden="true" /><div><strong>Contribuyente</strong><small>Correo, RUC y clasificación</small></div></li>
+              <li><span className="guide-list__marker" aria-hidden="true" /><div><strong>Vehículo</strong><small>Consulta disponible por placa</small></div></li>
+            </ul>
           </section>
           <div className="privacy-card">
             <PortalIcon name="shield" />

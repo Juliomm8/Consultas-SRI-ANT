@@ -23,16 +23,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function isValidSimulatedResult(result: ApiSuccess<PuntosDemoData>): result is DemoResult {
+function isValidDemoResult(result: unknown): result is DemoResult {
+  if (!isRecord(result)) return false
   const meta: unknown = result.meta
   const data: unknown = result.data
   if (!isRecord(meta) || !isRecord(data)) return false
-  if (meta.source !== 'SIMULATED' || meta.stale !== false) return false
   if (typeof meta.requestId !== 'string' || !REQUEST_ID_PATTERN.test(meta.requestId)) return false
   if (typeof meta.fetchedAt !== 'string' || Number.isNaN(Date.parse(meta.fetchedAt))) return false
   if (typeof meta.retrievedAt !== 'string' || Number.isNaN(Date.parse(meta.retrievedAt))) return false
   if (!Number.isInteger(data.totalPuntos) || typeof data.totalPuntos !== 'number' || data.totalPuntos < 0) return false
-  return meta.warning === null || typeof meta.warning === 'string'
+  const simulated = meta.source === 'SIMULATED' && meta.originSource === 'SIMULATED' && meta.stale === false
+      && (meta.warning === null || typeof meta.warning === 'string')
+  const cached = meta.source === 'CACHE' && meta.originSource === 'SIMULATED'
+      && meta.stale === true && typeof meta.warning === 'string'
+  return simulated || cached
 }
 
 function formatDate(value: string): string {
@@ -90,7 +94,7 @@ export function AntPointsDemo({ onBack }: { onBack: () => void }) {
     setState({ kind: 'loading' })
     try {
       const result = await consultarPuntosSimulados(input)
-      if (!isValidSimulatedResult(result)) {
+      if (!isValidDemoResult(result)) {
         setState({ kind: 'invalid', message: 'La respuesta no coincide con el contrato local de simulación.' })
         return
       }
@@ -133,8 +137,8 @@ export function AntPointsDemo({ onBack }: { onBack: () => void }) {
         </div>
 
         <form className="ant-demo-form" onSubmit={handleSubmit} noValidate>
-          <label htmlFor="ant-demo-cedula">Identificación sintética</label>
-          <p id="ant-demo-help">Usa únicamente el valor sintético fijo 0000000000. No ingreses identificaciones reales; el campo se limpia al enviar y no se guarda en el navegador.</p>
+          <label htmlFor="ant-demo-cedula">Cédula sintética</label>
+          <p id="ant-demo-help">Usa únicamente el fixture de prueba 0000000000. No ingreses cédulas reales; el campo se limpia al enviar y no se guarda en el navegador.</p>
           <div className="ant-demo-form__row">
             <input
               id="ant-demo-cedula"
@@ -144,7 +148,7 @@ export function AntPointsDemo({ onBack }: { onBack: () => void }) {
               autoComplete="off"
               maxLength={10}
               pattern="[0-9]{10}"
-              placeholder="Fixture sintético"
+              placeholder="10 dígitos sintéticos"
               aria-describedby="ant-demo-help"
               required
             />
@@ -155,22 +159,37 @@ export function AntPointsDemo({ onBack }: { onBack: () => void }) {
         </form>
 
         {state.kind === 'loading' && <p className="ant-demo-loading" role="status">Esperando al backend local…</p>}
-        {state.kind === 'success' && (
-          <section className="ant-demo-result" role="status" aria-label="Resultado simulado">
+        {state.kind === 'success' && (() => {
+          const cached = state.result.meta.source === 'CACHE'
+          return (
+          <section className={`ant-demo-result${cached ? ' ant-demo-result--cache' : ''}`} role="status" aria-label={cached ? 'Resultado recuperado desde caché' : 'Resultado simulado'}>
             <div className="ant-demo-result__header">
-              <span className="status-pill status-pill--simulated">SIMULATED</span>
-              <span>Resultado local · No oficial</span>
+              <span className={`status-pill ${cached ? 'status-pill--cache' : 'status-pill--simulated'}`}>{state.result.meta.source}</span>
+              <span>{cached
+                ? 'Último resultado disponible · origen SIMULATED'
+                : 'Simulación local · No oficial'}</span>
             </div>
-            <p className="ant-demo-result__label">Total de puntos simulado</p>
+            <p className="ant-demo-result__label">{cached ? 'Puntos en el último dato guardado' : 'Total de puntos simulado'}</p>
             <strong className="ant-demo-result__total">{state.result.data.totalPuntos}</strong>
             {state.result.data.totalPuntos === 0 && (
-              <p className="ant-demo-zero">Cero es un resultado válido de este escenario simulado.</p>
+              <p className="ant-demo-zero">{cached
+                ? 'El último resultado guardado es cero; esto es distinto a no recibir información.'
+                : 'Cero es un resultado válido de este escenario simulado.'}</p>
             )}
-            <p className="ant-demo-result__date">Generado: {formatDate(state.result.meta.fetchedAt)}</p>
-            <p className="ant-demo-warning">Este dato es de prueba; no proviene de la ANT ni debe usarse para trámites.</p>
+            <p className="ant-demo-result__date">{cached ? 'Obtenido originalmente:' : 'Generado en el simulador:'} {formatDate(state.result.meta.fetchedAt)}</p>
+            {cached ? (
+              <div className="ant-demo-warning ant-demo-warning--stale" role="note">
+                <strong>Información posiblemente desactualizada</strong>
+                <span>{state.result.meta.warning}</span>
+                <span>La procedencia original es SIMULATED; este resultado no es oficial de ANT.</span>
+              </div>
+            ) : (
+              <p className="ant-demo-warning">Este dato es de prueba; no proviene de la ANT ni debe usarse para trámites.</p>
+            )}
             <small>Referencia de solicitud: <code>{state.result.meta.requestId}</code></small>
           </section>
-        )}
+          )
+        })()}
         {state.kind !== 'idle' && state.kind !== 'loading' && state.kind !== 'success' && (
           <StatusMessage state={state} />
         )}

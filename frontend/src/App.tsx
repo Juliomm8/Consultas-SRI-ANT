@@ -102,7 +102,7 @@ function App() {
       <main id="main-content" tabIndex={-1}>
         <div className="page-shell">
           <HeroSection />
-          <ServicesSection />
+          <ServicesSection antDemoAvailable={ANT_DEMO_AVAILABLE} onOpenAntDemo={() => setShowAntDemo(true)} />
           <ConsultationFlow
             taxpayerResult={taxpayerResult}
             vehicleResult={vehicleResult}
