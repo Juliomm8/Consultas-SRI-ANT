@@ -1,0 +1,12 @@
+
+> consultas-sri-ant-frontend@0.0.0 test
+> vitest run
+
+
+ RUN  v5.1.0 C:/Dev/Arquitectura/Consultas-SRI-ANT/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  33 passed (33)
+   Start at  08:41:37
+   Duration  13.25s (tests 83%, environment 12%, setup 3%, import 1%)

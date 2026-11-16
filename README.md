@@ -32,6 +32,14 @@ Construimos una interfaz con React, TypeScript y Vite. Desde ella, el usuario pu
 
 La interfaz presenta los resultados y los mensajes de error de forma controlada. No se comunica directamente con los servicios del SRI o de la ANT: todas las consultas pasan por nuestra API.
 
+**Portada de escritorio.** Esta captura de Playwright muestra la página de inicio, el catálogo y el inicio del flujo; el formulario está vacío y la imagen no representa una consulta personal.
+
+![Página principal del portal en escritorio](docs/pruebas/evidencias-final/20261116/frontend/sri/01-portada-escritorio.png)
+
+**Vista móvil.** La captura vertical corresponde al recorrido responsive probado con el mismo conjunto local de pruebas.
+
+![Página principal del portal en móvil](docs/pruebas/evidencias-final/20261116/frontend/sri/02-portada-movil.png)
+
 ### Backend y servicios SRI
 
 Desarrollamos una API REST con Java 17 y Spring Boot 3.5.16. El backend recibe las solicitudes del frontend, valida sus datos y ejecuta los casos de uso correspondientes.
@@ -58,6 +66,12 @@ El flujo principal se divide en dos consultas SRI:
 2. **Obtención de detalles.** Si el SRI confirma que el RUC existe, el backend solicita sus detalles. La aplicación reconoce la clasificación confirmada «PERSONA NATURAL». Si la clasificación es desconocida o no se puede determinar, no la presenta como una persona natural.
 3. **Consulta del vehículo.** Después de confirmar una persona natural, el usuario puede ingresar una placa. El backend consulta al SRI y devuelve los campos vehiculares que reconoce. Esta consulta no demuestra que el vehículo pertenezca al contribuyente.
 4. **Consulta de puntos ANT.** La integración automática todavía no está disponible. En el flujo normal se muestra el enlace al trámite oficial de información del conductor. La demostración local de puntos es independiente, opcional y utiliza datos sintéticos.
+
+### Catálogo de servicios
+
+**Qué demuestra.** El catálogo distingue las operaciones SRI del estado pendiente de ANT y no la presenta como una etapa obligatoria del flujo.
+
+![Catálogo de servicios con ANT pendiente](docs/pruebas/evidencias-final/20261116/frontend/sri/03-catalogo-servicios.png)
 
 El correo electrónico se valida como parte de la solicitud, pero no se envía al SRI, no se almacena y tampoco se devuelve en la respuesta.
 
@@ -205,6 +219,17 @@ Por eso tomamos las siguientes medidas:
 5. **Aislamos los datos de prueba.** El adaptador Redis utiliza un espacio de claves para datos oficiales ANT y otro para la simulación. La aplicación no guarda una respuesta 502, un HTML de error o un cuerpo vacío como si fueran puntos válidos. Redis permanece desactivado por defecto.
 6. **Mantuvimos una alternativa para el usuario.** Mientras no exista una integración automática verificable, la interfaz normal enlaza al [trámite oficial de emisión del certificado de información del conductor](https://www.gob.ec/ant/tramites/emision-certificado-informacion-conductor). Ese trámite web incluye información de puntos, pero no equivale a una API que nuestro backend pueda consumir directamente.
 
+La interfaz enlaza a esa guía oficial en una pestaña nueva, con protección de navegación externa. La guía indica que el certificado contiene el total de puntos y describe cómo iniciar su trámite en línea desde el portal de la ANT. Es la ruta oficial para orientar al usuario; no es un endpoint automático que esta aplicación consuma.
+
+La dirección de la actividad con la página clp_grid_citaciones.jsp no se publica como enlace de consulta de puntos: el nombre corresponde a una vista de citaciones, sus parámetros no están confirmados como contrato de puntos y las rutas investigadas devolvieron HTTP 502. No se agregan identificaciones de ejemplo ni parámetros ficticios a enlaces públicos.
+
+**Estado ANT en la interfaz.** La captura muestra el enlace al trámite oficial junto con la aclaración de que la integración automática sigue pendiente.
+
+![Estado pendiente de integración ANT](docs/pruebas/evidencias-final/20261116/frontend/sri/09-estado-ant.png)
+**Acceso de desarrollo a la demostración.** Con `VITE_ANT_DEMO=true` en Vite de desarrollo, Home ofrece accesos en el encabezado y en la sección ANT. La captura muestra esos accesos y mantiene separado el enlace al trámite oficial; no es parte de la interfaz de producción.
+
+![Home con acceso a la demostración ANT local](docs/pruebas/evidencias-final/20261116/frontend/ant/home-ant-demo-access.png)
+
 El resultado de estas medidas es que podemos probar el comportamiento de nuestra aplicación frente a fallos sin depender del portal externo. **El 502 de la ANT no está corregido en el servidor externo:** la integración real sigue pendiente de una respuesta funcional y de confirmar un mecanismo de consulta autorizado. Lo que sí resolvimos fue el manejo controlado de esa limitación dentro de nuestro sistema.
 
 ### Otro 502 que sí corregimos en el adaptador SRI
@@ -246,6 +271,76 @@ Ejemplo de solicitud para consultar un vehículo:
 ~~~
 
 Los valores anteriores son ejemplos sintéticos y no representan consultas reales. El contrato completo, las validaciones y los códigos de error se explican en [Contrato REST v1](docs/api/contrato-v1.md).
+
+### Ejemplos sintéticos de respuesta
+
+Los siguientes fragmentos reflejan el contrato REST documentado. Son fixtures sintéticos; no son cuerpos literales de respuestas personales del SRI.
+
+Respuesta de contribuyente:
+
+~~~json
+{
+  "data": {
+    "ruc": "0000000000000",
+    "tipoPersona": "NATURAL",
+    "datosSRI": {
+      "numeroRuc": "0000000000000",
+      "tipoContribuyente": "PERSONA NATURAL"
+    }
+  },
+  "meta": {
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "source": "SRI",
+    "retrievedAt": "2026-11-14T20:00:00Z"
+  }
+}
+~~~
+
+Respuesta vehicular:
+
+~~~json
+{
+  "data": [
+    {
+      "camposSRI": {
+        "codigoVehiculo": 123,
+        "numeroPlaca": "E2E1234",
+        "numeroCamvCpn": null,
+        "aplicaCuota": true
+      }
+    }
+  ],
+  "meta": {
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "source": "SRI",
+    "retrievedAt": "2026-11-14T20:00:00Z"
+  }
+}
+~~~
+
+Los ejemplos distinguen texto, número, nulo y booleano. El backend conserva los campos observados que reconoce; una lista vehicular vacía no se transforma por sí sola en una afirmación de inexistencia.
+
+### Vistas de formularios y resultados
+
+**Formulario de contribuyente.** Se muestran los campos requeridos vacíos, los formatos esperados y la indicación de que el correo se valida en la aplicación.
+
+![Formulario de consulta de contribuyente](docs/pruebas/evidencias-final/20261116/frontend/sri/04-formulario-contribuyente.png)
+
+**Resultado de contribuyente.** La siguiente pantalla usa un fixture rotulado como sintético para ilustrar la clasificación y los grupos de datos; no contiene información de una consulta personal.
+
+![Resultado sintético de contribuyente](docs/pruebas/evidencias-final/20261116/frontend/sri/05-resultado-contribuyente.png)
+
+**Formulario vehicular.** Captura del ingreso de placa sin datos introducidos.
+
+![Formulario de consulta vehicular](docs/pruebas/evidencias-final/20261116/frontend/sri/06-formulario-vehicular.png)
+
+**Resultado vehicular.** La prueba presenta campos de un vehículo sintético y aclara que consultar una placa no confirma titularidad.
+
+![Resultado sintético de vehículo](docs/pruebas/evidencias-final/20261116/frontend/sri/07-resultado-vehicular.png)
+
+**Error controlado.** Esta captura ilustra el mensaje seguro que usa la interfaz para una respuesta no utilizable; corresponde a una prueba con stub local, no a una consulta en vivo.
+
+![Estado de error del proveedor en una prueba local](docs/pruebas/evidencias-final/20261116/frontend/sri/08-error-proveedor.png)
 
 Las respuestas exitosas incluyen un objeto de datos y metadata con el **requestId**, la fuente y la fecha de obtención. En los errores se devuelve un código estable, un mensaje controlado y el mismo identificador de solicitud en el cuerpo y en el encabezado **X-Request-Id**. No se devuelven trazas ni cuerpos sensibles de los proveedores.
 
@@ -358,9 +453,46 @@ Para detener los procesos, utiliza **Ctrl + C** en las terminales donde se inici
 
 Si el backend se ejecuta en otra dirección, copia **frontend/.env.example** a **frontend/.env.local** y configura **VITE_API_BASE_URL**. En el desarrollo local habitual no hace falta cambiar esta variable porque Vite ya utiliza el proxy configurado.
 
+### Variables de entorno
+
+En el uso normal no hace falta activar Redis ni la simulación ANT. Las variables de demostración se configuran solo en las terminales locales donde se inicia cada proceso.
+
+| Variable | Uso |
+|---|---|
+| VITE_API_BASE_URL | Base opcional para el cliente web; por defecto usa /api/v1. |
+| VITE_API_PROXY_TARGET | Destino del proxy de desarrollo; normalmente http://localhost:8080. |
+| VITE_ANT_DEMO | Debe ser true para mostrar la entrada a la demo, y solo se habilita cuando Vite corre en desarrollo. |
+| SPRING_PROFILES_ACTIVE | Use local-simulation para registrar el controlador y proveedor sintéticos de puntos, enlazados a loopback. |
+| ANT_SIMULATION_SCENARIO | Selecciona el escenario sintético del backend; no es un parámetro HTTP. |
+| REDIS_CACHE_ENABLED | Por defecto es false; habilítela únicamente para una prueba local preparada con Redis. |
+| REDIS_HOST, REDIS_PORT, REDIS_CACHE_TTL | Conexión y expiración configurable cuando Redis está explícitamente habilitado. |
+| REDIS_CACHE_HMAC_SECRET | Secreto local requerido al habilitar Redis; manténgalo fuera del repositorio y de los logs. |
+
+Redis Cloud no está configurado en este proyecto.
+
 ## 11. Demostración local de puntos ANT
 
 La demostración de puntos está separada del flujo normal de la aplicación. Para habilitarla se requiere activar explícitamente la variable **VITE_ANT_DEMO=true** en Vite y arrancar el backend con el perfil **local-simulation**.
+
+Para abrirla, inicia el backend y el frontend en terminales distintas. Desde Home aparecen dos accesos, **Demostración ANT** en la navegación y **Simular consulta ANT** en la tarjeta, únicamente si Vite está en desarrollo y la variable está activada. El formulario admite solo el fixture sintético documentado y limpia el campo al enviar. Si activas o cambias `VITE_ANT_DEMO` con Vite ya iniciado, detén y reinicia Vite para que la nueva configuración surta efecto.
+
+~~~powershell
+# Terminal 1: backend local
+cd backend
+$env:SPRING_PROFILES_ACTIVE = 'local-simulation'
+$env:ANT_SIMULATION_SCENARIO = 'SUCCESS'
+.\mvnw.cmd spring-boot:run
+~~~
+
+~~~powershell
+# Terminal 2: interfaz de desarrollo en loopback
+cd frontend
+$env:VITE_ANT_DEMO = 'true'
+$env:VITE_API_PROXY_TARGET = 'http://127.0.0.1:8080'
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+~~~
+
+La demo no se puede abrir ni se muestra en la interfaz del build de producción: la bandera de acceso depende del modo de desarrollo y de `VITE_ANT_DEMO=true`. Una revisión del bundle encontró que se conserva una etiqueta de botón condicional, aunque no se renderizan el acceso ni la vista. Para el recorrido local con Redis, consulta [Demo local de puntos ANT](docs/pruebas/demo-ant-local.md); no se debe activar en un servidor público.
 
 El backend utiliza un identificador sintético fijo para las pruebas y queda enlazado a **127.0.0.1**. El simulador puede representar distintos escenarios:
 
@@ -380,10 +512,18 @@ Cuando se utiliza el escenario **SUCCESS_THEN_TIMEOUT** con Redis local habilita
 <details>
 <summary>Ver captura de la demostración local</summary>
 
-![Resultado sintético de la demostración local de puntos ANT](docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-013654/frontend/e2e-ant/09-ant-simulado.png)
+![Resultado sintético de la demostración local de puntos ANT](docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-final-ant-local/09-ant-simulado.png)
 
 *Captura generada mediante Playwright con el proveedor simulado. No es una consulta real ni información oficial de la ANT.*
 </details>
+
+**Primer resultado local.** La captura E2E muestra la fuente SIMULATED, el total sintético y la advertencia de que no es información oficial. En este recorrido se ejecutó el simulador local con Redis 7.4 real en Docker por loopback.
+
+![Primer resultado SIMULATED en la prueba E2E con Redis local](docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-final-ant-redis/ant-redis-simulated-success.png)
+
+**Recuperación desde caché.** La segunda captura pertenece al mismo recorrido: tras un timeout producido por el simulador, la respuesta se marcó CACHE, conservó originSource=SIMULATED y la fecha fetchedAt original, y advirtió que el dato podía estar desactualizado. No demuestra una caída real de ANT.
+
+![Recuperación CACHE de la prueba E2E con Redis local](docs/pruebas/evidencias-ant-redis/ejecuciones/20261116-final-ant-redis/ant-redis-cache-recovery.png)
 
 Los comandos completos, la configuración de Redis, los escenarios y las evidencias están en [Demostración local de puntos de licencia](docs/pruebas/demo-ant-local.md).
 
@@ -391,7 +531,7 @@ Los comandos completos, la configuración de Redis, los escenarios y las evidenc
 
 No consideramos suficiente que la aplicación compile. También probamos las validaciones, los errores de los proveedores, el flujo entre el navegador y el backend y el comportamiento de la caché ante un timeout.
 
-En la ejecución reproducible del **16 de noviembre de 2026** se obtuvieron los siguientes resultados:
+En la repetición de cierre del **16 de noviembre de 2026, entre 08:39 y 08:45 (-05:00)** se obtuvieron los siguientes resultados:
 
 | Verificación | Resultado | Qué comprueba |
 |---|---:|---|
@@ -406,7 +546,11 @@ En la ejecución reproducible del **16 de noviembre de 2026** se obtuvieron los 
 
 **Alcance de estas pruebas:** los recorridos SRI utilizaron un servidor de prueba local; los recorridos ANT utilizaron el simulador de la aplicación. No se consultaron servicios SRI ni ANT reales durante esta ejecución. Las dos pruebas JUnit de Redis y la prueba Playwright ANT + Redis sí utilizaron Redis 7.4.12 real en un contenedor local, pero eso no significa que Redis Cloud esté conectado.
 
-Los informes, logs sanitizados y capturas de esta ejecución se encuentran en [Evidencias de pruebas ANT y Redis](docs/pruebas/evidencias-ant-redis/README.md). La explicación de los recorridos del navegador está en [Prueba integral E2E](docs/pruebas/e2e-sri-frontend-backend.md).
+El detalle de esta repetición, sus logs sanitizados y capturas está en el [registro de verificación final](docs/pruebas/evidencias-final/20261116/README.md). Los resultados históricos se conservan en [Evidencias de pruebas ANT y Redis](docs/pruebas/evidencias-ant-redis/README.md). La explicación de los recorridos del navegador está en [Prueba integral E2E](docs/pruebas/e2e-sri-frontend-backend.md).
+
+**Estado de error en navegador.** La imagen es una captura de Playwright con stub local y muestra el mensaje seguro y la referencia de solicitud, sin traza ni cuerpo externo.
+
+![Mensaje de error controlado probado desde el navegador](docs/pruebas/evidencias-final/20261116/frontend/sri/08-error-proveedor.png)
 
 ## 13. Seguridad y tratamiento de datos
 
@@ -448,6 +592,8 @@ Para revisar cada parte del desarrollo, estos son los documentos principales del
 | [Demo local ANT](docs/pruebas/demo-ant-local.md) | Escenarios simulados y recuperación desde caché. |
 | [Prueba E2E SRI](docs/pruebas/e2e-sri-frontend-backend.md) | Recorrido entre navegador, frontend, backend y stub SRI. |
 | [Evidencias de pruebas](docs/pruebas/evidencias-ant-redis/README.md) | Resultados, reportes, logs y capturas de la ejecución del 16-11-2026. |
+| [Prueba de usabilidad](docs/pruebas/guia-prueba-usabilidad.md) | Protocolo y plantilla vacía para una sesión real; no contiene resultados inventados. |
+| [Matriz de rúbrica](docs/evaluacion/matriz-rubrica.md) | Evidencia por criterio, limitaciones y pendientes. |
 | [Diseño de la interfaz](docs/diseno/rediseño-ui-ux.md) | Decisiones visuales y evidencias de la interfaz. |
 | [Recursos visuales](docs/diseno/recursos-visuales.md) | Fuentes, autores y licencias de las fotografías utilizadas. |
 

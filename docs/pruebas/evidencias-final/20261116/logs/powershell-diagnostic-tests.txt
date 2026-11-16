@@ -1,0 +1,1 @@
+Pruebas PowerShell aprobadas: SoloANT aislado, formulario sintético, privacidad, cookies en memoria, errores HTTP, redirecciones y reintentos acotados.

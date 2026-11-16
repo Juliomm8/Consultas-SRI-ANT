@@ -39,10 +39,10 @@ En otra terminal, inicia Vite enlazado a loopback y activa la vista explícitame
 Set-Location .\frontend
 $env:VITE_ANT_DEMO = 'true'
 $env:VITE_API_PROXY_TARGET = 'http://127.0.0.1:8080'
-npm run dev -- --host 127.0.0.1
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
-Abre la URL local mostrada por Vite y selecciona **Abrir demostración ANT**. Para desactivar la vista, detén Vite o elimina/cambia `VITE_ANT_DEMO` y reinícialo. Detén el backend local cuando termines. No expongas el servidor de desarrollo a una interfaz pública.
+Abre `http://localhost:5173` y selecciona **Simular consulta ANT** en la tarjeta ANT o **Demostración ANT** en la navegación. La pantalla abre el componente interno `AntPointsDemo`; no tiene una ruta URL independiente. Para regresar, utiliza **Volver al inicio**. Vite lee `VITE_ANT_DEMO` al arrancar: si la variable se establece o cambia después de iniciar el servidor, detén Vite con `Ctrl+C` y vuelve a ejecutar `npm run dev`. Para desactivar la vista, elimina/cambia la variable y reinícialo. Detén el backend local cuando termines. No expongas el servidor de desarrollo a una interfaz pública.
 
 El backend acepta estos escenarios locales, controlados desde el proceso al iniciar:
 
@@ -192,7 +192,7 @@ El **15 de noviembre de 2026** se ejecutaron las verificaciones de esta entrega,
 
 - Backend: `..\mvnw.cmd -B clean verify`, **159 pruebas aprobadas**, 0 fallos, 0 errores y JAR generado.
 - Frontend: `npm test`, **30 pruebas aprobadas**; `npm run lint` pasó.
-- Producción: `npm run build` pasó con `VITE_ANT_DEMO=true`; se revisó el bundle y no contiene el texto, botón ni ruta de la demo.
+- Producción: `npm run build` pasó con `VITE_ANT_DEMO=true`. El escaneo de esa ejecución comprobó un conjunto de marcadores y no debe interpretarse como una inspección exhaustiva de todas las cadenas estáticas del bundle. La bandera de acceso depende del modo de desarrollo, por lo que el botón y la vista no se muestran en producción.
 - E2E SRI existente: `npm run test:e2e`, **2 pruebas aprobadas**.
 - Demo local: `npm run test:e2e:ant`, **1 prueba Playwright aprobada**. El stub de guardia SRI recibió cero solicitudes y el runner no configuró ningún proveedor externo.
 
@@ -209,8 +209,9 @@ SRI ni ANT reales.
 - Redis real opcional: `RedisPuntosLicenciaCacheIntegrationIT`, **2 pruebas
   aprobadas** contra Redis 7.4 local.
 - Frontend: `npm test`, **33 pruebas aprobadas**; `npm run lint` y
-  `npm run build` pasaron. Se confirmó que el bundle normal no contiene la
-  interfaz de demostración ANT.
+  `npm run build` pasaron. La interfaz de demostración no es accesible desde
+  el build normal; una revisión adicional detectó una etiqueta condicional
+  retenida en el bundle, según se explica más abajo.
 - E2E SRI: `npm run test:e2e`, **3 pruebas aprobadas** usando stubs locales.
 - E2E ANT aislado: `npm run test:e2e:ant`, **7 pruebas aprobadas**.
 - E2E ANT con Redis: `npm run test:e2e:ant:redis`, **1 prueba aprobada** con un
@@ -272,6 +273,14 @@ capturas en una carpeta nueva. No hubo consultas a SRI ni ANT reales.
   timeout del simulador → `CACHE`, con `originSource=SIMULATED`, `stale=true` y
   total y `fetchedAt` conservados.
 
+En una comprobación adicional del 16 de noviembre de 2026 se abrió el build de
+producción local con Playwright. No aparecieron el acceso del encabezado, el
+botón de la tarjeta ANT ni la vista de demostración. El JavaScript compilado sí
+conserva la etiqueta condicional «Abrir simulación académica»; esto no habilita
+la función ni permite abrirla en producción. Por tanto, la garantía comprobada
+es de inaccesibilidad en la interfaz de producción, no la eliminación de cada
+cadena relacionada con la demo del bundle.
+
 El primer intento de la prueba JUnit optativa de Redis no llegó a ejecutar casos:
 PowerShell dividió argumentos Maven `-D`. Se corrigió la invocación pasando cada
 argumento por separado; el segundo intento ejecutó y aprobó las dos pruebas.
@@ -291,3 +300,7 @@ alcances.
 - El esquema `data.totalPuntos` es el contrato normalizado de la aplicación, no un campo confirmado del proveedor.
 - La integración real, la vigencia aceptable de los datos, la semántica de ausencia y cualquier uso de `ps_placa` siguen pendientes de evidencia autorizada.
 - Redis Cloud no está configurado; el fallback ANT no se ha comprobado contra una indisponibilidad real del proveedor.
+
+## Evidencia de la verificación final
+
+La ejecución final del 16 de noviembre de 2026, posterior a los cambios de navegación, tiene sus resultados y límites en el [registro de verificación final](evidencias-final/20261116/README.md). La [captura de Home](evidencias-final/20261116/frontend/ant/home-ant-demo-access.png) muestra el acceso de desarrollo desde el encabezado y la tarjeta. Las capturas del recorrido con Spring Boot y del recorrido con Redis 7.4.12 real se conservan, respectivamente, en [ANT local](evidencias-ant-redis/ejecuciones/20261116-final-ant-local/) y [ANT + Redis](evidencias-ant-redis/ejecuciones/20261116-final-ant-redis/). La recuperación es desde el simulador y no demuestra una consulta o caída real de ANT.

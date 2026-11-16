@@ -123,7 +123,7 @@ Playwright; no corresponde a una identificación de usuario.
 | `RedisPuntosLicenciaCacheIntegrationIT` — `realRedisSupportsUseCaseSuccessThenTimeoutAndSimulationCacheFallback` | Redis 7.4.12 real y proveedor `SUCCESS_THEN_TIMEOUT` simulado. El proveedor no usa red. | Aprobada: `SIMULATED` se guarda y, tras timeout simulado, vuelve como `CACHE`, con `originSource=SIMULATED`, fecha y total originales. | Comprueba el caso de uso con almacenamiento Redis real, no una falla de ANT real. |
 | Pruebas unitarias Redis/Spring del backend | `RedisPuntosLicenciaCacheAdapterTests` usa Mockito para Redis; pruebas de servicio/configuración usan fakes o contextos Spring de prueba. | No son las dos pruebas de Redis real de esta ejecución. | Verifican aislamiento, errores, validación de datos y configuración sin un Redis externo. |
 | `npm test` y `npm run test` con reporter JUnit | Vitest, jsdom, React Testing Library y fixtures sintéticos. | 33 aprobadas en cada invocación; 0 fallos. | No llaman a servicios externos ni Redis. |
-| `npm run lint` / `npm run build` | Herramientas locales del frontend. | Ambos aprobados. El bundle normal no contiene los marcadores revisados de la demo ANT. | La build no demuestra disponibilidad de un proveedor. |
+| `npm run lint` / `npm run build` | Herramientas locales del frontend. | Ambos aprobados. El escaneo de bundle revisó marcadores seleccionados; no demuestra que se hayan retirado todas las cadenas estáticas relacionadas con la demo. | La build no demuestra disponibilidad de un proveedor. |
 | `npm run test:e2e` | Playwright, React/Vite, Spring Boot y stub SRI local. | 3 aprobadas. | Verifica el flujo E2E SRI con fixture; no consulta SRI real. |
 | `npm run test:e2e:ant` | Playwright, React/Vite, Spring Boot y simulador local en loopback; el guard SRI recibió cero solicitudes. | 7 aprobadas; las capturas canónicas más recientes están en `ejecuciones/20261116-013654/frontend/e2e-ant/`. | No usa Redis en esta ejecución y no consulta ANT. |
 
@@ -143,3 +143,13 @@ claves HMAC reales ni identificaciones personales en los archivos publicables.
 - El timeout de este recorrido lo genera el simulador, sin espera ni red.
 - Redis Cloud no se configuró ni probó.
 - El resultado `SIMULATED` y su recuperación desde Redis no son datos oficiales.
+
+## Cierre final de verificación `20261116`
+
+La ejecución final posterior a la integración de la navegación ANT está documentada por separado para conservar la trazabilidad de esta repetición. Incluye los logs sanitizados, el informe XML de Redis, las capturas SRI y Home, y la evidencia de los recorridos locales de simulación y recuperación. Las suites y cantidades se registran por ejecución; Surefire (165) y JUnit Redis (2) no se suman.
+
+- [Resumen de verificación, alcance y resultados](../evidencias-final/20261116/README.md)
+- [Home con acceso a la demo en desarrollo](../evidencias-final/20261116/frontend/ant/home-ant-demo-access.png)
+- [Capturas del flujo SRI con stubs](../evidencias-final/20261116/frontend/sri/)
+- [Escenarios ANT locales](ejecuciones/20261116-final-ant-local/)
+- [SIMULATED y recuperación CACHE con Redis local](ejecuciones/20261116-final-ant-redis/)
